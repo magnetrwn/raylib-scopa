@@ -1,5 +1,10 @@
 executable("demo") {
-  sources = [ "src/main.c" ]
+  sources = [ 
+    "src/main.c",
+    "src/graphics.c",
+    "src/deck.c",
+  ]
+  
   configs = [ "//build:warnings" ]
   if (is_debug) {
     configs += [ "//build:debug_cflags" ]

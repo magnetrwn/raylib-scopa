@@ -1,0 +1,9 @@
+executable("demo") {
+  sources = [ "src/main.c" ]
+  configs = [ "//build:warnings" ]
+  if (is_debug) {
+    configs += [ "//build:debug_cflags" ]
+  } else {
+    configs += [ "//build:release_cflags" ]
+  }
+}

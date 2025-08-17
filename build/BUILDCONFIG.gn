@@ -1,0 +1,2 @@
+declare_args() { is_debug = true }
+set_default_toolchain("//toolchain:gcc")

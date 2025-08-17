@@ -1,0 +1,6 @@
+config("warnings") {
+  cflags = [ "-Wall", "-Wextra", "-Wpedantic" ]
+  cflags_c = [ "-std=c11" ]
+}
+config("debug_cflags")   { cflags = [ "-O0", "-g", "-no-pie", "-fno-omit-frame-pointer" ] }
+config("release_cflags") { cflags = [ "-Ofast", "-Werror", "-flto" ] }

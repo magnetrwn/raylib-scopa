@@ -1,0 +1,20 @@
+toolchain("gcc") {
+  tool("cc") {
+    depfile = "{{output}}.d"
+    command = "gcc -MMD -MF {{output}}.d {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
+    outputs = [ "{{source_out_dir}}/{{source_name_part}}.o" ]
+  }
+
+  tool("alink") {
+    command = "rm -f {{output}} && ar crs {{output}} {{inputs}}"
+    outputs = [ "{{target_out_dir}}/{{target_output_name}}.a" ]
+  }
+
+  tool("link") {
+    command = "gcc {{ldflags}} -o {{output}} {{inputs}} {{solibs}} {{libs}}"
+    outputs = [ "{{target_out_dir}}/{{target_output_name}}" ]
+  }
+
+  tool("stamp") { command = "touch {{output}}" }
+  tool("copy")  { command = "cp -f {{source}} {{output}}" }
+}

@@ -13,5 +13,5 @@ if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
 fi
 
 gn gen out/"$BUILD_TYPE" --args="is_debug=$([ "$BUILD_TYPE" == "Debug" ] && echo true || echo false)"
-ninja -C out/"$BUILD_TYPE" demo
-./out/"$BUILD_TYPE"/obj/demo || { echo "Build failed."; exit 1; }
+ninja -C out/"$BUILD_TYPE" game
+./out/"$BUILD_TYPE"/obj/game || { echo "Build failed."; exit 1; }

@@ -30,8 +30,6 @@ typedef struct _Card {
     CardRank rank;
 } Card;
 
-inline bool CARD_IsError(Card* card) {
-    return card->rank == CARD_ERROR.rank;
-}
+bool CARD_IsError(const Card* c);
 
 #endif // CARD_H_

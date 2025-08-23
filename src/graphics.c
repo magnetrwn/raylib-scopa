@@ -90,7 +90,14 @@ static const CardSymbolInfo CARD_SYMBOLS[] = {
     { .syms = { GFX_TOP_LEFT_SYMBOL, GFX_END_SYMBOL }},
 };
 
+const Rectangle FIGURE_ATLAS_SRC[3] = {
+    {  2.0f,   0.0f, 280.0f, 480.0f },  // J
+    { 284.0f,  0.0f, 280.0f, 480.0f },  // Q
+    { 566.0f,  0.0f, 280.0f, 480.0f },  // K
+};
+
 static Font sym_font;
+static Texture2D figure_atlas;
 static CardInfo render_arr[MAX_CARDS_IN_TICK];
 static int render_idx;
 
@@ -115,6 +122,7 @@ static void _DrawCardFace(const CardInfo* ci) {
             break;
 
         const char* to_draw = "?";
+
         if (sym->type == SYMBOL_RANK) {
             switch (ci->c.rank) {
                 case CARD_RANK_ACE:   to_draw = "A"; break;
@@ -128,7 +136,9 @@ static void _DrawCardFace(const CardInfo* ci) {
                 case CARD_RANK_QUEEN: to_draw = "Q"; break;
                 case CARD_RANK_KING:  to_draw = "K"; break;
             }
-        } else if (sym->type == SYMBOL_SUIT) {
+        } 
+        
+        else if (sym->type == SYMBOL_SUIT) {
             switch (ci->c.suit) {
                 case CARD_SUIT_HEARTS:   to_draw = "{"; sym_color = COLOR_HEARTS;   break;
                 case CARD_SUIT_DIAMONDS: to_draw = "["; sym_color = COLOR_DIAMONDS; break;
@@ -151,22 +161,44 @@ static void _DrawCardFace(const CardInfo* ci) {
     const Vector2 center = (Vector2){ ci->cri.x, ci->cri.y };
     const float w2 = ci->cri.w * 0.5f * BORDER_BASE_MUL;
     const float h2 = ci->cri.h * 0.5f * BORDER_BASE_MUL;
-    const Vector2 off[5] = {{ -w2 * 0.7f, -h2 }, { +w2, -h2 }, { +w2, +h2 }, { -w2, +h2 }, { -w2, -h2 * 0.5f }};
-
-    Vector2 pts[5]; // rotate the border line points
+    const Vector2 off[5] = {
+        { -w2 * 0.7f, -h2 }, { +w2, -h2 }, { +w2, +h2 }, { -w2, +h2 }, { -w2, -h2 * 0.5f }
+    };
+    Vector2 pts[5];
     for (int k = 0; k < 5; ++k) {
         Vector2 r = _RotOffset(off[k], ci->cri.angle_deg);
         pts[k].x = center.x + r.x;
         pts[k].y = center.y + r.y;
     }
-
     DrawLineStrip(pts, 5, sym_color);
+
+    if (ci->c.rank >= CARD_RANK_JACK && ci->c.rank <= CARD_RANK_KING) {
+        Rectangle src = FIGURE_ATLAS_SRC[ci->c.rank - CARD_RANK_JACK];
+    
+        const float scale = fminf(w2 / src.width, h2 / src.height) * 2.0f;
+        const float dst_w = src.width * scale;
+        const float dst_h = src.height * scale;
+
+        Rectangle dst = { center.x, center.y, dst_w, dst_h };
+        Vector2 pivot = { dst_w * 0.5f, dst_h * 0.5f };
+
+        DrawTexturePro(figure_atlas, src, dst, pivot, ci->cri.angle_deg, sym_color);
+    }
 }
 
 void GFX_Init(int w, int h) {
     InitWindow(w, h, "GameWindow");
     SetTargetFPS(60);
+
     sym_font = LoadFont("assets/fnt/symbols.ttf");
+
+    Image i = LoadImage("assets/img/face-figure-atlas.png");
+    figure_atlas = LoadTextureFromImage(i);
+    UnloadImage(i);
+    SetTextureFilter(figure_atlas, TEXTURE_FILTER_BILINEAR);
+    SetTextureWrap(figure_atlas, TEXTURE_WRAP_CLAMP);
+    GenTextureMipmaps(&figure_atlas);
+    
     render_idx = 0;
 }
 
@@ -198,5 +230,6 @@ void GFX_Tick(void) {
 
 void GFX_DeInit(void) {
     UnloadFont(sym_font);
+    UnloadTexture(figure_atlas);
     CloseWindow();
 }

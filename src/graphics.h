@@ -7,7 +7,7 @@
 #define SYMBOL_W_DIV_BY      28.0f // divide the card width by this many units and use the symbol layouts over the generated grid
 #define SYMBOL_H_DIV_BY      54.0f // divide the card width by this many units and use the symbol layouts over the generated grid
 #define FONT_BASE_MUL        8.0f  // base font size multiplier before scaling
-#define BORDER_BASE_MUL      0.8f // base border position multiplier before scaling (to make it a bit inset)
+#define BORDER_BASE_MUL      0.8f  // base border position multiplier before scaling (to make it a bit inset)
 
 #define COLOR_HEARTS   (Color) { 220, 20, 60, 255 }
 #define COLOR_DIAMONDS (Color) { 255, 140, 0, 255 }

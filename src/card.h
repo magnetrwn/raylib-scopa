@@ -2,7 +2,7 @@
 #define CARD_H_
 
 #include <stdbool.h>
-#define CARD_ERROR ((Card) {0, ERROR})
+#define CARD_ERROR ((Card) {0, _ERROR})
 
 typedef enum _CardSuit {
     CARD_SUIT_HEARTS,
@@ -22,7 +22,7 @@ typedef enum _CardRank {
     CARD_RANK_JACK,
     CARD_RANK_QUEEN,
     CARD_RANK_KING,
-    ERROR
+    _ERROR
 } CardRank;
 
 typedef struct _Card {

@@ -14,4 +14,6 @@ fi
 
 gn gen out/"$BUILD_TYPE" --args="is_debug=$([ "$BUILD_TYPE" == "Debug" ] && echo true || echo false)"
 ninja -C out/"$BUILD_TYPE" game
-./out/"$BUILD_TYPE"/obj/game || { echo "Build failed."; exit 1; }
+mkdir -p out/"$BUILD_TYPE"/obj/assets
+rsync -a --delete assets/ out/"$BUILD_TYPE"/obj/assets/
+out/"$BUILD_TYPE"/obj/game || { echo "Build failed."; exit 1; }

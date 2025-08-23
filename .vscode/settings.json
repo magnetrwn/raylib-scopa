@@ -4,6 +4,9 @@
         "raylib.h": "c",
         "stdint.h": "c",
         "card.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "stdio.h": "c",
+        "any": "c",
+        "random": "c"
     }
 }

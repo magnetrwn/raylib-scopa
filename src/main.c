@@ -3,79 +3,49 @@
 #include "random.h"
 #include "graphics.h"
 
-#define WINDOW_W 1024
-#define WINDOW_H 768
-#define CARD_W 128
-#define CARD_H 208
+#define WINDOW_W 1152
+#define WINDOW_H 864
+#define CARD_W 112
+#define CARD_H 192
 
 #define CARDS_DEMO_N 64
 
+static RenderTexture2D card_atlas;
+
 int main(void) {
     RND_InitOnce();
-    printf("Hello, World!\n");
-
     GFX_Init(WINDOW_W, WINDOW_H);
-    CardInfo ci_arr[64] = {};
+    GFX_BuildCardTextureAtlas(&card_atlas, CARD_W, CARD_H);
 
-    float angv[64];
-    float xv[64];
-    float yv[64];
-
+    CardInfo ci_arr[CARDS_DEMO_N];
     for (int i = 0; i < CARDS_DEMO_N; ++i) {
-        ci_arr[i].c.suit = RND_Get(0, 3);
-        ci_arr[i].c.rank = RND_Get(1, 10);
-        ci_arr[i].cri.x = RND_Get(100, WINDOW_W - 100);
-        ci_arr[i].cri.y = RND_Get(100, WINDOW_H - 100);
-        int scale_mul = RND_Get(2, 4);
-        int scale_div = RND_Get(5, 6);
-        ci_arr[i].cri.w = CARD_W * scale_mul / scale_div;
-        ci_arr[i].cri.h = CARD_H * scale_mul / scale_div;
-        ci_arr[i].cri.angle_deg = RND_Get(0, 180);
-
-        angv[i] = (float) RND_Get(-10, 10) * 0.05f;
-        xv[i] = (float) RND_Get(-10, 10) * 0.05f;
-        yv[i] = (float) RND_Get(-10, 10) * 0.05f;
+        ci_arr[i].c.suit = RND_Get(CARD_SUIT_HEARTS, CARD_SUIT_SPADES);
+        ci_arr[i].c.rank = RND_Get(CARD_RANK_ACE, CARD_RANK_KING);
+        ci_arr[i].w = CARD_W;
+        ci_arr[i].h = CARD_H;
+        ci_arr[i].x = RND_Get(0, WINDOW_W - CARD_W);
+        ci_arr[i].y = RND_Get(0, WINDOW_H - CARD_H);
+        ci_arr[i].angle_deg = (float) RND_Get(-15, +15);
     }
 
-    while (1) {
+    float sum_ft = 0.0f;
+    for (int f = 1;; ++f) {
         if (WindowShouldClose())
             break;
 
-        for (int i = 0; i < CARDS_DEMO_N; ++i) {
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                Vector2 mp = GetMousePosition();
-                Rectangle mr = { mp.x - 20, mp.y - 20, 40, 40 };
-                Rectangle cr = { ci_arr[i].cri.x - ci_arr[i].cri.w / 2, ci_arr[i].cri.y - ci_arr[i].cri.h / 2, ci_arr[i].cri.w, ci_arr[i].cri.h };
-                if (CheckCollisionRecs(mr, cr)) {
-                    GFX_DrawCard(&ci_arr[i]);
-                    continue;
-                }
-            }
-
-            ci_arr[i].cri.angle_deg += angv[i];
-            if (ci_arr[i].cri.angle_deg >= 360.0f) 
-                ci_arr[i].cri.angle_deg -= 360.0f;
-            if (ci_arr[i].cri.angle_deg < 0.0f) 
-                ci_arr[i].cri.angle_deg += 360.0f;
-
-            ci_arr[i].cri.x += xv[i];
-            if (ci_arr[i].cri.x < CARD_W / 2)
-                xv[i] = -xv[i]; 
-            if (ci_arr[i].cri.x > WINDOW_W - CARD_W / 2)
-                xv[i] = -xv[i]; 
-
-            ci_arr[i].cri.y += yv[i];
-            if (ci_arr[i].cri.y < CARD_H / 2)
-                yv[i] = -yv[i]; 
-            if (ci_arr[i].cri.y > WINDOW_H - CARD_H / 2)
-                yv[i] = -yv[i]; 
-
+        for (int i = 0; i < CARDS_DEMO_N; ++i)
             GFX_DrawCard(&ci_arr[i]);
-        }
 
-        GFX_Tick();
+        GFX_RenderTick(&card_atlas);
+
+        sum_ft += GetFrameTime() * 1000.0f;
+        if (f % 20 == 0) {
+            printf("Frame time avg/20: %.2f ms\n", sum_ft / 20.0f);
+            sum_ft = 0.0f;
+        }
     }
 
+    UnloadTexture(card_atlas.texture);
     GFX_DeInit();
     return 0;
 }

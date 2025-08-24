@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #define CARD_ERROR ((Card) {0, _ERROR})
+#define CARD_SUITS 4
+#define CARD_RANKS 10
 
 typedef enum _CardSuit {
     CARD_SUIT_HEARTS,

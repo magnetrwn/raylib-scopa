@@ -7,6 +7,8 @@
         "stdbool.h": "c",
         "stdio.h": "c",
         "any": "c",
-        "random": "c"
+        "random": "c",
+        "graphics.h": "c",
+        "type_traits": "c"
     }
 }

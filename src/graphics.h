@@ -26,6 +26,7 @@ typedef struct _CardInfo {
 void GFX_Init(int w, int h);
 void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h);
 void GFX_DrawCard(const CardInfo* ci);
+void GFX_DrawCardN(const CardInfo* ci, int n);
 void GFX_RenderTick(const RenderTexture2D* atlas);
 void GFX_DeInit(void);
 

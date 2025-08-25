@@ -4,7 +4,9 @@ executable("game") {
     "src/graphics.c",
     "src/deck.c",
     "src/random.c",
-    "src/card.c"
+    "src/card.c",
+    "src/ui.c",
+    "src/util.c"
   ]
 
   deps = [ 

@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "random.h"
 #include "graphics.h"
+#include "ui.h"
 
 #define WINDOW_W 1152
 #define WINDOW_H 864
@@ -16,6 +17,7 @@ int main(void) {
     RND_InitOnce();
     GFX_Init(WINDOW_W, WINDOW_H);
     GFX_BuildCardTextureAtlas(&card_atlas, CARD_W, CARD_H);
+    UI_Init();
 
     CardInfo ci_arr[CARDS_DEMO_N];
     for (int i = 0; i < CARDS_DEMO_N; ++i) {
@@ -29,14 +31,18 @@ int main(void) {
         ci_arr[i].is_hover = false;
     }
 
+    IfElement ie_arr[CARDS_DEMO_N];
+    for (int i = 0; i < CARDS_DEMO_N; ++i)
+        UI_IfCreateCard(&ie_arr[i], &ci_arr[i]);
+
     double delay_ft = GetTime();
     for (;;) {
         if (WindowShouldClose())
             break;
 
-        for (int i = 0; i < CARDS_DEMO_N; ++i)
-            GFX_DrawCard(&ci_arr[i]);
-
+        UI_IfPlaceN(ie_arr, CARDS_DEMO_N);
+        UI_IfTick(GetMousePosition(), IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+        GFX_DrawCardN(ci_arr, CARDS_DEMO_N);
         GFX_RenderTick(&card_atlas);
 
         if (GetTime() - delay_ft < 1.0f)

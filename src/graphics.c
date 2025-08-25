@@ -1,8 +1,9 @@
 #include "graphics.h"
-#include <raylib.h>
+#include "raylib.h"
 #include <stdio.h>
 #include "card.h"
-#include <math.h>
+#include <string.h>
+#include "util.h"
 
 #define SYMBOL_W_DIV_BY      28.0f // divide the card width by this many units and use the symbol layouts over the generated grid
 #define SYMBOL_H_DIV_BY      54.0f // divide the card width by this many units and use the symbol layouts over the generated grid
@@ -14,7 +15,6 @@
 #define GFX_TOP_LEFT_SYMBOL { -11, -16, SYMBOL_SUIT }, { -11, -23, SYMBOL_RANK } // put the suit first to make it easier for face drawing
 #define GFX_END_SYMBOL      { 0, 0, SYMBOL_END }
 
-#define ATLAS_IDX(suit, rank) ((suit)*ATLAS_COLS + ((rank)-1))  // suit:0..3, rank:1..10
 #define ATLAS_PAD_PX 4
 
 // types related to card symbol layout and listing
@@ -56,11 +56,6 @@ static Font sym_font;
 static Texture2D figure_atlas;
 static CardInfo render_arr[MAX_CARDS_IN_TICK];
 static int render_idx;
-
-static inline Vector2 _RotOffset(Vector2 off, float deg) {
-    float r = deg * DEG2RAD, s = sinf(r), c = cosf(r);
-    return (Vector2) { off.x * c - off.y * s, off.x * s + off.y * c };
-}
 
 static void _DrawCardFace(const CardInfo* ci) {
     const float font_size = FONT_BASE_MUL * ci->h / SYMBOL_H_DIV_BY;
@@ -104,12 +99,13 @@ static void _DrawCardFace(const CardInfo* ci) {
             }
         }
 
-        Vector2 off = (Vector2){
+        Vector2 off = (Vector2) {
             sym->rx * ci->w / SYMBOL_W_DIV_BY,
             sym->ry * ci->h / SYMBOL_H_DIV_BY
         };
 
-        Vector2 pos = _RotOffset(off, ci->angle_deg);
+        Vector2 pos = off;
+        UTIL_Rotate(&pos, ci->angle_deg);
         pos.x += ci->x; pos.y += ci->y;
 
         DrawTextPro(sym_font, to_draw, pos, (sym->type == SYMBOL_SUIT) ? origin_suit : origin_rank, ci->angle_deg, font_size, 1.0f, sym_color);
@@ -123,7 +119,8 @@ static void _DrawCardFace(const CardInfo* ci) {
     };
     Vector2 pts[5];
     for (int k = 0; k < 5; ++k) {
-        Vector2 r = _RotOffset(off[k], ci->angle_deg);
+        Vector2 r = off[k];
+        UTIL_Rotate(&r, ci->angle_deg);
         pts[k].x = center.x + r.x;
         pts[k].y = center.y + r.y;
     }
@@ -212,14 +209,23 @@ void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h) {
         }
     }
     EndTextureMode();
-    SetTextureFilter(out->texture, TEXTURE_FILTER_TRILINEAR);
     GenTextureMipmaps(&out->texture);
+    SetTextureFilter(out->texture, TEXTURE_FILTER_TRILINEAR);
 }
 
 void GFX_DrawCard(const CardInfo* ci) {
-    if (ci == NULL || ci->w <= 0 || ci->h <= 0 || CARD_IsError(&ci->c) || render_idx >= MAX_CARDS_IN_TICK)
+    if (ci == NULL || render_idx >= MAX_CARDS_IN_TICK)
         return;
     render_arr[render_idx++] = *ci;
+}
+
+void GFX_DrawCardN(const CardInfo* ci, int n) {
+    if (ci == NULL || n <= 0)
+        return;
+    if (render_idx + n >= MAX_CARDS_IN_TICK)
+        n = MAX_CARDS_IN_TICK - render_idx;
+    memcpy(&render_arr[render_idx], ci, sizeof(CardInfo) * n);
+    render_idx += n;
 }
 
 void GFX_RenderTick(const RenderTexture2D* atlas) {
@@ -234,6 +240,8 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
     
     for (int i = 0; i < render_idx; ++i) {
         CardInfo* ci = &render_arr[i];
+        if (ci->w <= 0 || ci->h <= 0 || CARD_IsError(&ci->c))
+            continue;
         DrawTexturePro(
             atlas->texture, 
             _CardAtlasSrc(ci->c.suit, ci->c.rank, ci->w, ci->h), 

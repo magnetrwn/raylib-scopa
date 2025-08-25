@@ -226,11 +226,11 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
     BeginDrawing();
     ClearBackground(COLOR_BG);
 
-    DrawTextureRec(atlas->texture,
-        (Rectangle){ 0, 0, (float) atlas->texture.width, (float) -atlas->texture.height },
-        (Vector2) { 0, 0 }, 
-        (Color) { 255, 255, 255, 50 }
-    );
+    // DrawTextureRec(atlas->texture,
+    //     (Rectangle){ 0, 0, (float) atlas->texture.width, (float) -atlas->texture.height },
+    //     (Vector2) { 0, 0 }, 
+    //     (Color) { 255, 255, 255, 50 }
+    // );
     
     for (int i = 0; i < render_idx; ++i) {
         CardInfo* ci = &render_arr[i];
@@ -240,7 +240,7 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
             (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
             (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
             ci->angle_deg, 
-            WHITE
+            ci->is_hover ? COLOR_HOVER : COLOR_CARD
         );
     }
 

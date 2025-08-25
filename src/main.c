@@ -26,10 +26,11 @@ int main(void) {
         ci_arr[i].x = RND_Get(0, WINDOW_W - CARD_W);
         ci_arr[i].y = RND_Get(0, WINDOW_H - CARD_H);
         ci_arr[i].angle_deg = (float) RND_Get(-15, +15);
+        ci_arr[i].is_hover = false;
     }
 
-    float sum_ft = 0.0f;
-    for (int f = 1;; ++f) {
+    double delay_ft = GetTime();
+    for (;;) {
         if (WindowShouldClose())
             break;
 
@@ -38,11 +39,11 @@ int main(void) {
 
         GFX_RenderTick(&card_atlas);
 
-        sum_ft += GetFrameTime() * 1000.0f;
-        if (f % 20 == 0) {
-            printf("Frame time avg/20: %.2f ms\n", sum_ft / 20.0f);
-            sum_ft = 0.0f;
-        }
+        if (GetTime() - delay_ft < 1.0f)
+            continue;
+
+        printf("Frame time: %.2f ms\n", GetFrameTime() * 1000.0f);
+        delay_ft = GetTime();
     }
 
     UnloadTexture(card_atlas.texture);

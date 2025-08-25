@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "raylib.h"
 #include "card.h"
-#define MAX_CARDS_IN_TICK    80   // max cards that can be rendered per tick
+#define MAX_CARDS_IN_TICK    80    // max cards that can be rendered per tick
 #define MAX_SYMBOLS_PER_CARD 16    // max symbols (characters) that can be drawn per card, minus 1 for terminator
 #define COLOR_HEARTS   (Color) { 220, 20, 60, 255 }
 #define COLOR_DIAMONDS (Color) { 232, 109, 20, 255 }
@@ -20,6 +20,7 @@ typedef struct _CardInfo {
     int w, h;
     float angle_deg;
     bool is_hover;
+    bool is_flipped;
 } CardInfo; // you should use this to keep track of cards instead of just Card[] alone
 
 void GFX_Init(int w, int h);

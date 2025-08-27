@@ -13,7 +13,6 @@ void UI_Init(void) {
 
 void UI_IfCreateLabel(IfElement* ie, const char* text, const Rectangle info) {
     ie->type = IF_EL_LABEL;
-    ie->event = IF_EVT_NONE;
     ie->text = text;
     ie->corners[0] = (Vector2) { info.x, info.y };
     ie->corners[1] = (Vector2) { info.x + info.width, info.y };
@@ -23,7 +22,6 @@ void UI_IfCreateLabel(IfElement* ie, const char* text, const Rectangle info) {
 
 void UI_IfCreateButton(IfElement* ie, const char* text, const Rectangle info) {
     ie->type = IF_EL_BTN;
-    ie->event = IF_EVT_NONE;
     ie->text = text;
     ie->corners[0] = (Vector2) { info.x, info.y };
     ie->corners[1] = (Vector2) { info.x + info.width, info.y };
@@ -33,7 +31,6 @@ void UI_IfCreateButton(IfElement* ie, const char* text, const Rectangle info) {
 
 void UI_IfCreateCard(IfElement* ie, const CardInfo* ci) {
     ie->type = IF_EL_CARD;
-    ie->event = IF_EVT_NONE;
     ie->card  = (CardInfo*)ci;
 
     const float cx = ci->x, cy = ci->y;
@@ -68,21 +65,22 @@ void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
         IfElement* ie = &el_arr[i];
         evt_arr[i] = IF_EVT_NONE;
 
-        if (ie->type == IF_EL_NONE)
-            continue;
-
         switch (ie->type) {
+            case IF_EL_NONE:
+                break;
             case IF_EL_LABEL:
                 break;
             case IF_EL_CARD:
-                ie->card->is_hover = false;
-                ie->event = IF_EVT_NONE;
+                ie->card->tint = WHITE;
+                evt_arr[i] = IF_EVT_NONE;
                 if (CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[1], ie->corners[2]) ||
                     CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[2], ie->corners[3])) {
-                    ie->card->is_hover = true;
-                    ie->event = IF_EVT_HOVER;
-                    if (mouse_click)
-                        ie->event = IF_EVT_CLICK;
+                    //ie->card->tint = COLOR_HOVER;
+                    evt_arr[i] = IF_EVT_HOVER;
+                    if (mouse_click) {
+                        //ie->card->tint = COLOR_CLICK;
+                        evt_arr[i] = IF_EVT_CLICK;
+                    }
                 }
                 break;
             case IF_EL_BTN:
@@ -93,4 +91,16 @@ void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
     }
 
     el_idx = 0;
+}
+
+IfEvtIdx UI_EvtPop(void) {
+    for (int i = 0; i < MAX_IF_ELS_IN_TICK; ++i) {
+        if (evt_arr[i] == IF_EVT_NONE)
+            continue;
+
+        IfEvtIdx ret = { evt_arr[i], i };
+        evt_arr[i] = IF_EVT_NONE;
+        return ret;
+    }
+    return NO_EVENTS_LEFT;
 }

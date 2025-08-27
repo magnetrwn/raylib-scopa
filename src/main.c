@@ -28,7 +28,7 @@ int main(void) {
         ci_arr[i].x = RND_Get(0, WINDOW_W - CARD_W);
         ci_arr[i].y = RND_Get(0, WINDOW_H - CARD_H);
         ci_arr[i].angle_deg = (float) RND_Get(-15, +15);
-        ci_arr[i].is_hover = false;
+        ci_arr[i].tint = WHITE;
     }
 
     IfElement ie_arr[CARDS_DEMO_N];
@@ -41,7 +41,20 @@ int main(void) {
             break;
 
         UI_IfPlaceN(ie_arr, CARDS_DEMO_N);
-        UI_IfTick(GetMousePosition(), IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+        UI_IfTick(GetMousePosition(), IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+
+        IfEvtIdx e;
+        while ((e = UI_EvtPop()).evt != IF_EVT_NONE) {
+            if (e.evt == IF_EVT_CLICK) {
+                ci_arr[e.idx].tint = COLOR_CLICK;
+                ci_arr[e.idx].is_flipped = !ci_arr[e.idx].is_flipped;
+            } else if (e.evt == IF_EVT_HOVER) {
+                ci_arr[e.idx].tint = COLOR_HOVER;
+            } else {
+                ci_arr[e.idx].tint = WHITE;
+            }
+        }
+
         GFX_DrawCardN(ci_arr, CARDS_DEMO_N);
         GFX_RenderTick(&card_atlas);
 

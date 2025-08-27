@@ -5,17 +5,19 @@
 #include <string.h>
 #include "util.h"
 
+#define ATLAS_PAD_PX 4
+#define ATLAS_UPSCALE_MUL    2.0f // render the atlas at this much size for better quality when scaling down
+
 #define SYMBOL_W_DIV_BY      28.0f // divide the card width by this many units and use the symbol layouts over the generated grid
 #define SYMBOL_H_DIV_BY      54.0f // divide the card width by this many units and use the symbol layouts over the generated grid
 #define FONT_BASE_LOAD       96    // base font size to load the symbol font with
 #define FONT_BASE_MUL        8.0f  // base font size multiplier before scaling
 #define BORDER_BASE_MUL      0.8f  // base border position multiplier before scaling (to make it a bit inset)
-#define ROUND_CORNER_PX      8.0f  // radius of the rounded corners of the card
+#define BORDER_BASE_BACK_MUL 0.875f// base border position multiplier before scaling (to make it a bit inset)
+#define ROUND_CORNER_PX      (ATLAS_UPSCALE_MUL*8.0f) // radius of the rounded corners of the card
 
 #define GFX_TOP_LEFT_SYMBOL { -11, -16, SYMBOL_SUIT }, { -11, -23, SYMBOL_RANK } // put the suit first to make it easier for face drawing
 #define GFX_END_SYMBOL      { 0, 0, SYMBOL_END }
-
-#define ATLAS_PAD_PX 4
 
 // types related to card symbol layout and listing
 typedef enum _CardSymbolType { 
@@ -56,6 +58,25 @@ static Font sym_font;
 static Texture2D figure_atlas;
 static CardInfo render_arr[MAX_CARDS_IN_TICK];
 static int render_idx;
+
+static void _DrawCardBase(const CardInfo* ci, Color color) {
+    DrawRectanglePro(
+        (Rectangle) { ci->x + ROUND_CORNER_PX, ci->y, ci->w - ROUND_CORNER_PX * 2, ci->h },
+        (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
+        0.0f, 
+        color
+    );
+    DrawRectanglePro(
+        (Rectangle) { ci->x, ci->y + ROUND_CORNER_PX, ci->w, ci->h - ROUND_CORNER_PX * 2 },
+        (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
+        0.0f, 
+        color
+    );
+    DrawCircle(ci->x - ci->w * 0.5f + ROUND_CORNER_PX, ci->y - ci->h * 0.5f + ROUND_CORNER_PX, ROUND_CORNER_PX, color);
+    DrawCircle(ci->x + ci->w * 0.5f - ROUND_CORNER_PX, ci->y - ci->h * 0.5f + ROUND_CORNER_PX, ROUND_CORNER_PX, color);
+    DrawCircle(ci->x - ci->w * 0.5f + ROUND_CORNER_PX, ci->y + ci->h * 0.5f - ROUND_CORNER_PX, ROUND_CORNER_PX, color);
+    DrawCircle(ci->x + ci->w * 0.5f - ROUND_CORNER_PX, ci->y + ci->h * 0.5f - ROUND_CORNER_PX, ROUND_CORNER_PX, color);
+}
 
 static void _DrawCardFace(const CardInfo* ci) {
     const float font_size = FONT_BASE_MUL * ci->h / SYMBOL_H_DIV_BY;
@@ -141,11 +162,14 @@ static void _DrawCardFace(const CardInfo* ci) {
 }
 
 static inline Rectangle _CardAtlasSrc(int suit, int rank, int card_w, int card_h) { 
+    card_w *= ATLAS_UPSCALE_MUL;
+    card_h *= ATLAS_UPSCALE_MUL;
+
     return (Rectangle) { 
         (float) (ATLAS_PAD_PX + (rank - 1) * (card_w + ATLAS_PAD_PX)), 
         (float) (ATLAS_PAD_PX + suit * (card_h + ATLAS_PAD_PX)), 
         (float) card_w, 
-        -(float) card_h 
+        -(float) card_h
     }; 
 }
 
@@ -165,12 +189,12 @@ void GFX_Init(int w, int h) {
 }
 
 void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h) {
-    //card_w *= 2;
-    //card_h *= 2;
+    card_w *= ATLAS_UPSCALE_MUL;
+    card_h *= ATLAS_UPSCALE_MUL;
 
     *out = LoadRenderTexture(
         CARD_RANKS * card_w + (CARD_RANKS + 1) * ATLAS_PAD_PX, 
-        CARD_SUITS * card_h + (CARD_SUITS + 1) * ATLAS_PAD_PX
+        (CARD_SUITS + 1) * card_h + (CARD_SUITS + 2) * ATLAS_PAD_PX // add a row for back drawing
     );
     SetTextureWrap(out->texture, TEXTURE_WRAP_CLAMP);
 
@@ -182,32 +206,98 @@ void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h) {
             CardInfo ci;
             ci.c.suit = s;
             ci.c.rank = r;
-            ci.x = (ATLAS_PAD_PX + (r - 1) * (card_w + ATLAS_PAD_PX)) + card_w * 0.5f;
+            ci.x = (ATLAS_PAD_PX + (r - 1) * (card_w + ATLAS_PAD_PX)) + card_w * 0.5f; // last part is to center cards
             ci.y = (ATLAS_PAD_PX + s * (card_h + ATLAS_PAD_PX)) + card_h * 0.5f;
             ci.w = card_w;
             ci.h = card_h;
             ci.angle_deg = 0.0f;
 
-            DrawRectanglePro(
-                (Rectangle) { ci.x + ROUND_CORNER_PX, ci.y, ci.w - ROUND_CORNER_PX * 2, ci.h },
-                (Vector2) { ci.w * 0.5f, ci.h * 0.5f }, 
-                0.0f, 
-                COLOR_CARD
-            );
-            DrawRectanglePro(
-                (Rectangle) { ci.x, ci.y + ROUND_CORNER_PX, ci.w, ci.h - ROUND_CORNER_PX * 2 },
-                (Vector2) { ci.w * 0.5f, ci.h * 0.5f }, 
-                0.0f, 
-                COLOR_CARD
-            );
-            DrawCircle(ci.x - ci.w * 0.5f + ROUND_CORNER_PX, ci.y - ci.h * 0.5f + ROUND_CORNER_PX, ROUND_CORNER_PX, COLOR_CARD);
-            DrawCircle(ci.x + ci.w * 0.5f - ROUND_CORNER_PX, ci.y - ci.h * 0.5f + ROUND_CORNER_PX, ROUND_CORNER_PX, COLOR_CARD);
-            DrawCircle(ci.x - ci.w * 0.5f + ROUND_CORNER_PX, ci.y + ci.h * 0.5f - ROUND_CORNER_PX, ROUND_CORNER_PX, COLOR_CARD);
-            DrawCircle(ci.x + ci.w * 0.5f - ROUND_CORNER_PX, ci.y + ci.h * 0.5f - ROUND_CORNER_PX, ROUND_CORNER_PX, COLOR_CARD);
-
+            _DrawCardBase(&ci, COLOR_CARD);
             _DrawCardFace(&ci);
         }
     }
+
+    for (int theme = 0; theme < COLOR_THEMES_N; ++theme) {
+        CardInfo back;
+        back.x = ATLAS_PAD_PX + theme * (card_w + ATLAS_PAD_PX) + card_w * 0.5f;
+        back.y = (ATLAS_PAD_PX + CARD_SUITS * (card_h + ATLAS_PAD_PX)) + card_h * 0.5f;
+        back.w = card_w;
+        back.h = card_h;
+        back.angle_deg = 0.0f;
+        _DrawCardBase(&back, COLOR_THEMES[theme]);
+
+        back.x = ATLAS_PAD_PX + theme * (card_w + ATLAS_PAD_PX);
+        back.y = (ATLAS_PAD_PX + CARD_SUITS * (card_h + ATLAS_PAD_PX));
+        const Vector2 c = { back.x + back.w * 0.5f, back.y + back.h * 0.5f };
+        const float rad = fminf(back.w, back.h) * 0.4f;
+
+        const int N = 96;
+        Vector2 pts[96];
+
+        for (int i = 0; i < N; ++i) {
+            float t = (2 * PI * i) / (N - 1);
+            float r = rad * 0.75f * cosf(8.0f * t);
+            pts[i] = (Vector2) { c.x + r * sinf(t), c.y + r * cosf(t) };
+        }
+        DrawLineStrip(pts, N, COLOR_THEMES[(theme + 1) % COLOR_THEMES_N]);
+        DrawRing(c, rad * 0.70f, rad * 0.75f, 0, 360, 128, COLOR_THEMES[(theme + 1) % COLOR_THEMES_N]);
+
+        for (int i = 0; i < N; ++i) {
+            float t = (2 * PI * i) / (N - 1);
+            float r = rad * 1.0f * cosf(5.0f * t + 0.85f);
+            pts[i] = (Vector2) { c.x + r * sinf(t), c.y + r * cosf(t) };
+        }
+        DrawLineStrip(pts, N, COLOR_THEMES[(theme + 2) % COLOR_THEMES_N]);
+        DrawRing(c, rad * 0.45f, rad * 0.50f, 0, 360, 128, COLOR_THEMES[(theme + 2) % COLOR_THEMES_N]);
+        
+        float w2 = back.w * 0.5f * BORDER_BASE_BACK_MUL;
+        float h2 = back.h * 0.5f * BORDER_BASE_BACK_MUL;
+        const Vector2 off1[5] = {
+            { -w2, -h2 }, { +w2, -h2 }, { +w2, +h2 }, { -w2, +h2 }, { -w2, -h2 }
+        };
+        for (int k = 0; k < 5; ++k) {
+            Vector2 r = off1[k];
+            pts[k].x = c.x + r.x;
+            pts[k].y = c.y + r.y;
+        }
+        DrawLineStrip(pts, 5, COLOR_THEMES[(theme + 1) % COLOR_THEMES_N]);
+
+        w2 = back.w * 0.5f * BORDER_BASE_BACK_MUL + 4.0f;
+        h2 = back.h * 0.5f * BORDER_BASE_BACK_MUL + 4.0f;
+        const Vector2 off2[5] = {
+            { -w2, -h2 }, { +w2, -h2 }, { +w2, +h2 }, { -w2, +h2 }, { -w2, -h2 }
+        };
+        for (int k = 0; k < 5; ++k) {
+            Vector2 r = off2[k];
+            pts[k].x = c.x + r.x;
+            pts[k].y = c.y + r.y;
+        }
+        DrawLineStrip(pts, 5, COLOR_THEMES[(theme + 2) % COLOR_THEMES_N]);
+
+        BeginBlendMode(BLEND_ADDITIVE);
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 6; ++j) {
+                if ((i + j) % 2 == 0)
+                    DrawRectangle(
+                        c.x - (int)(back.w * 0.5f) + i * (int)(back.w / 4),
+                        c.y - (int)(back.h * 0.5f) + j * (int)(back.h / 6),
+                        back.w / 4,
+                        back.h / 6,
+                        (Color) { 255, 255, 255, 18 }
+                    );
+                else
+                    DrawRectangle(
+                        c.x - (int)(back.w * 0.5f) + i * (int)(back.w / 4),
+                        c.y - (int)(back.h * 0.5f) + j * (int)(back.h / 6),
+                        back.w / 4,
+                        back.h / 6,
+                        (Color) { 255, 255, 255, 0 }
+                    );
+            }
+        }
+        EndBlendMode();
+    }
+
     EndTextureMode();
     GenTextureMipmaps(&out->texture);
     SetTextureFilter(out->texture, TEXTURE_FILTER_TRILINEAR);
@@ -233,9 +323,9 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
     ClearBackground(COLOR_BG);
 
     // DrawTextureRec(atlas->texture,
-    //     (Rectangle){ 0, 0, (float) atlas->texture.width, (float) -atlas->texture.height },
+    //     (Rectangle) { 0, -160, (float) atlas->texture.width, (float) -atlas->texture.height },
     //     (Vector2) { 0, 0 }, 
-    //     (Color) { 255, 255, 255, 50 }
+    //     (Color) { 255, 255, 255, 255 }
     // );
     
     for (int i = 0; i < render_idx; ++i) {
@@ -248,7 +338,7 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
             (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
             (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
             ci->angle_deg, 
-            ci->is_hover ? COLOR_HOVER : COLOR_CARD
+            ci->tint
         );
     }
 

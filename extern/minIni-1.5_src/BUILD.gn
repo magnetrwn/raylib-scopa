@@ -1,0 +1,9 @@
+config("pub") {
+  include_dirs = [ "//extern/minIni-1.5_src" ]
+  # defines = [ ]
+}
+
+source_set("minini") {
+  public_configs = [ ":pub" ]
+  sources = [ "minIni.c" ]
+}

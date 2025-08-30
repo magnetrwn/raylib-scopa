@@ -3,7 +3,7 @@
 
 #include "graphics.h"
 #define MAX_IF_ELS_IN_TICK 128
-#define NO_EVENTS_LEFT (IfEvtIdx) { IF_EVT_NONE, -1 }
+#define NO_EVENTS_LEFT (IfEvtIdx) { IF_EVT_END, -1 }
 
 typedef enum _IfElType {
     IF_EL_NONE,
@@ -15,7 +15,8 @@ typedef enum _IfElType {
 typedef enum _IfElEvent {
     IF_EVT_NONE,
     IF_EVT_HOVER,
-    IF_EVT_CLICK
+    IF_EVT_CLICK,
+    IF_EVT_END = -1
 } IfElEvent;
 
 typedef struct _IfEvtIdx {
@@ -27,13 +28,13 @@ typedef struct _IfElement {
     IfElType type;
     union { const char* text; CardInfo* card; };
     Vector2 corners[4]; 
-} IfElement;
+} IfElement; // you should use this to keep track of UI elements together with CardInfo[]
 
 void UI_Init(void);
 
 void UI_IfCreateLabel(IfElement* ie, const char* text, const Rectangle info);
 void UI_IfCreateButton(IfElement* ie, const char* text, const Rectangle info);
-void UI_IfCreateCard(IfElement* ie, const CardInfo* ci);
+void UI_IfCreateCard(IfElement* ie, CardInfo* ci);
 void UI_IfPlace(const IfElement* ie);
 void UI_IfPlaceN(const IfElement* ie, int n);
 void UI_IfTick(Vector2 mouse_pos, bool mouse_click);

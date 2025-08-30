@@ -9,6 +9,9 @@
         "any": "c",
         "random": "c",
         "graphics.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "minglue.h": "c",
+        "ui.h": "c",
+        "config.h": "c"
     }
 }

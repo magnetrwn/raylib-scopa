@@ -29,9 +29,9 @@ void UI_IfCreateButton(IfElement* ie, const char* text, const Rectangle info) {
     ie->corners[3] = (Vector2) { info.x, info.y + info.height };
 }
 
-void UI_IfCreateCard(IfElement* ie, const CardInfo* ci) {
+void UI_IfCreateCard(IfElement* ie, CardInfo* ci) {
     ie->type = IF_EL_CARD;
-    ie->card  = (CardInfo*)ci;
+    ie->card = ci;
 
     const float cx = ci->x, cy = ci->y;
     const float w2 = ci->w * 0.5f, h2 = ci->h * 0.5f;
@@ -94,7 +94,7 @@ void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
 }
 
 IfEvtIdx UI_EvtPop(void) {
-    for (int i = 0; i < MAX_IF_ELS_IN_TICK; ++i) {
+    for (int i = MAX_IF_ELS_IN_TICK - 1; i >= 0; --i) {
         if (evt_arr[i] == IF_EVT_NONE)
             continue;
 

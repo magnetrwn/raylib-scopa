@@ -5,18 +5,17 @@
 #include "ui.h"
 #include "config.h"
 
-#define CARD_W 112
-#define CARD_H 192
+#define CARD_W (WINDOW_W / 16 + 64)
+#define CARD_H (WINDOW_W / 8 + 84)
 
 #define CARDS_DEMO_N 40
-
-static RenderTexture2D card_atlas;
+#define TABS_DEMO_N 3
 
 int main(void) {
     CFG_Load();
     RND_InitOnce();
     GFX_Init();
-    GFX_BuildCardTextureAtlas(&card_atlas, CARD_W, CARD_H);
+    GFX_BuildCardTextureAtlas(CARD_W, CARD_H);
     GFX_SetCardRearTheme(CARD_REAR_THEME_IDX);
     UI_Init();
 
@@ -33,9 +32,19 @@ int main(void) {
         ci_arr[i].tint = WHITE;
     }
 
+    TabInfo ti_arr[TABS_DEMO_N] = {
+        { "Table Details", 200, 100, 400, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
+        { "Statistics", WINDOW_W - 200, 100, 400, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
+        { "Chances", WINDOW_W - 200, WINDOW_H - 100, 400, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_DOWN }
+    };
+
     IfElement ie_arr[CARDS_DEMO_N]; // TODO make another array of these for other UI elements
     for (int i = 0; i < CARDS_DEMO_N; ++i)
-        UI_IfCreateCard(&ie_arr[i], &ci_arr[i]);
+        UI_IfCreateCard(&ie_arr[i], &ci_arr[i]); // TODO later on, create UI only after animations are done, while animations interact directly with GFX_ functions
+
+    IfElement tab_arr[TABS_DEMO_N];
+    for (int i = 0; i < TABS_DEMO_N; ++i)
+        UI_IfCreateTab(&tab_arr[i], &ti_arr[i]);
 
     for (;;) {
         if (WindowShouldClose())
@@ -45,29 +54,48 @@ int main(void) {
             int new_theme = (CARD_REAR_THEME_IDX + 1) % COLOR_THEMES_N;
             CARD_REAR_THEME_IDX = new_theme;
             GFX_SetCardRearTheme(new_theme);
+            //for (int i = 0; i < TABS_DEMO_N; ++i)
+            //    ti_arr[i].is_open = !ti_arr[i].is_open;
         }
 
         UI_IfPlaceN(ie_arr, CARDS_DEMO_N);
+        UI_IfPlaceN(tab_arr, TABS_DEMO_N);
         UI_IfTick(GetMousePosition(), IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 
         IfEvtIdx e;
-        while ((e = UI_EvtPop()).evt != IF_EVT_END) {
-            if (e.evt == IF_EVT_CLICK) {
-                ci_arr[e.idx].tint = COLOR_CLICK;
-                ci_arr[e.idx].is_flipped = !ci_arr[e.idx].is_flipped;
-                break;
-            } else if (e.evt == IF_EVT_HOVER) {
-                ci_arr[e.idx].tint = COLOR_HOVER;
-                break;
-            } else
-                ci_arr[e.idx].tint = WHITE;
+        while ((e = UI_EvtPop()).evt != IF_EVT_NONE) {
+            if (e.idx < CARDS_DEMO_N)
+                switch (e.evt) {
+                    case IF_EVT_CLICK:
+                        ci_arr[e.idx].tint = COLOR_CLICK;
+                        ci_arr[e.idx].is_flipped = !ci_arr[e.idx].is_flipped;
+                        goto event_continue;
+                    case IF_EVT_HOVER:
+                        ci_arr[e.idx].tint = COLOR_HOVER;
+                        goto event_continue;
+                }
+            else if (e.idx - CARDS_DEMO_N < TABS_DEMO_N)
+                switch (e.evt) {
+                    case IF_EVT_CLICK:
+                        ti_arr[e.idx - CARDS_DEMO_N].is_open = !ti_arr[e.idx - CARDS_DEMO_N].is_open;
+                        goto event_continue;
+                    case IF_EVT_HOVER:
+                        ti_arr[e.idx - CARDS_DEMO_N].tint = COLOR_HOVER;
+                        goto event_continue;
+                }
         }
+        event_continue:
 
         GFX_CardDrawN(ci_arr, CARDS_DEMO_N);
-        GFX_RenderTick(&card_atlas);
-    }
+        GFX_TabDrawN(ti_arr, TABS_DEMO_N);
+        GFX_RenderTick();
 
-    UnloadTexture(card_atlas.texture);
+        for (int i = 0; i < CARDS_DEMO_N; ++i)
+            ci_arr[i].tint = WHITE;
+        for (int i = 0; i < TABS_DEMO_N; ++i)
+            ti_arr[i].tint = COLOR_TAB_BG;
+    }
+    
     GFX_DeInit();
     return 0;
 }

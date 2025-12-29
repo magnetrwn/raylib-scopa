@@ -51,10 +51,14 @@ const Rectangle FIGURE_ATLAS_SRC[3] = {
     { 560.0f + FIGURE_ATLAS_PAD_PX*3, 0.0f, 280.0f, 480.0f }, // k
 };
 
+static RenderTexture2D card_atlas;
 static Font sym_font;
+static Font text_font;
 static Texture2D figure_atlas;
 static CardInfo render_arr[MAX_CARDS_IN_TICK];
 static int render_idx;
+static TabInfo tab_arr[MAX_TABS_IN_TICK];
+static int tab_idx;
 static int theme_idx;
 
 static void _DrawCardBase(const CardInfo* ci, Color color) {
@@ -148,9 +152,8 @@ static void _DrawCardFace(const CardInfo* ci) {
     if (ci->c.rank >= CARD_RANK_JACK && ci->c.rank <= CARD_RANK_KING) {
         Rectangle src = FIGURE_ATLAS_SRC[ci->c.rank - CARD_RANK_JACK];
     
-        const float scale = fminf(w2 / src.width, h2 / src.height) * 2.0f;
-        const float dst_w = src.width * scale;
-        const float dst_h = src.height * scale;
+        const float dst_w = src.width * w2 / src.width * 2.0f;
+        const float dst_h = src.height * h2 / src.height * 2.0f;
 
         Rectangle dst = { center.x, center.y, dst_w, dst_h };
         Vector2 pivot = { dst_w * 0.5f, dst_h * 0.5f };
@@ -194,6 +197,7 @@ void GFX_Init(void) {
     SetTargetFPS(60);
 
     sym_font = LoadFontEx("assets/fnt/symbols.ttf", FONT_BASE_LOAD, NULL, 0);
+    text_font = LoadFontEx("assets/fnt/DejaVuSans.ttf", FONT_BASE_LOAD, NULL, 0);
 
     Image i = LoadImage("assets/img/face-figure-atlas.png");
     figure_atlas = LoadTextureFromImage(i);
@@ -203,17 +207,17 @@ void GFX_Init(void) {
     theme_idx = 0;
 }
 
-void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h) {
+void GFX_BuildCardTextureAtlas(int card_w, int card_h) {
     card_w *= ATLAS_UPSCALE_MUL;
     card_h *= ATLAS_UPSCALE_MUL;
 
-    *out = LoadRenderTexture(
+    card_atlas = LoadRenderTexture(
         CARD_RANKS * card_w + (CARD_RANKS + 1) * ATLAS_PAD_PX, 
         (CARD_SUITS + 1) * card_h + (CARD_SUITS + 2) * ATLAS_PAD_PX // add a row for back drawing
     );
-    SetTextureWrap(out->texture, TEXTURE_WRAP_CLAMP);
+    SetTextureWrap(card_atlas.texture, TEXTURE_WRAP_CLAMP);
 
-    BeginTextureMode(*out);
+    BeginTextureMode(card_atlas);
     ClearBackground(BLANK);
 
     for (int s = 0; s < CARD_SUITS; ++s) {
@@ -261,7 +265,7 @@ void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h) {
 
         for (int i = 0; i < N; ++i) {
             float t = (2 * PI * i) / (N - 1);
-            float r = rad * 1.0f * cosf(5.0f * t + 0.85f);
+            float r = rad * 1.0f * -cosf(5.0f * t);
             pts[i] = (Vector2) { c.x + r * sinf(t), c.y + r * cosf(t) };
         }
         //DrawLineStrip(pts, N, COLOR_THEMES[(theme + 2) % COLOR_THEMES_N]);
@@ -312,8 +316,8 @@ void GFX_BuildCardTextureAtlas(RenderTexture2D *out, int card_w, int card_h) {
     }
 
     EndTextureMode();
-    GenTextureMipmaps(&out->texture);
-    SetTextureFilter(out->texture, TEXTURE_FILTER_TRILINEAR);
+    GenTextureMipmaps(&card_atlas.texture);
+    SetTextureFilter(card_atlas.texture, TEXTURE_FILTER_TRILINEAR);
 }
 
 void GFX_SetCardRearTheme(int idx) {
@@ -337,7 +341,22 @@ void GFX_CardDrawN(const CardInfo* ci, int n) {
     render_idx += n;
 }
 
-void GFX_RenderTick(const RenderTexture2D* atlas) {
+void GFX_TabDraw(const TabInfo* ti) {
+    if (ti == NULL || tab_idx >= MAX_TABS_IN_TICK)
+        return;
+    tab_arr[tab_idx++] = *ti;
+}
+
+void GFX_TabDrawN(const TabInfo* ti, int n) {
+    if (ti == NULL || n <= 0)
+        return;
+    if (tab_idx + n >= MAX_TABS_IN_TICK)
+        n = MAX_TABS_IN_TICK - tab_idx;
+    memcpy(&tab_arr[tab_idx], ti, sizeof(TabInfo) * n);
+    tab_idx += n;
+}
+
+void GFX_RenderTick(void) {
     BeginDrawing();
     ClearBackground(COLOR_BG);
 
@@ -353,7 +372,7 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
             continue;
         if (!ci->is_flipped)
             DrawTexturePro(
-                atlas->texture, 
+                card_atlas.texture, 
                 _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
                 (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
                 (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
@@ -362,7 +381,7 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
             );
         else
             DrawTexturePro(
-                atlas->texture, 
+                card_atlas.texture, 
                 _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
                 (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
                 (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
@@ -371,12 +390,52 @@ void GFX_RenderTick(const RenderTexture2D* atlas) {
             );
     }
 
+    for (int i = 0; i < tab_idx; ++i) {
+        TabInfo* ti = &tab_arr[i];
+        if (ti->w <= 0 || ti->h <= 0)
+            continue;
+
+        if (ti->is_open)
+            DrawRectanglePro(
+                (Rectangle) { ti->x, ti->y, ti->w, ti->h },
+                (Vector2) { ti->w * 0.5f, ti->h * 0.5f },
+                0.0f,
+                COLOR_TAB_BG
+            );
+
+        const float arrow_off = 7.0f;
+        Vector2 roll_pos;
+        switch (ti->roll_dir) {
+            case TAB_ROLL_UP:   roll_pos.x = ti->x; roll_pos.y = ti->y - ti->h * 0.5f + ti->rolled_h * 0.5f; break;
+            case TAB_ROLL_DOWN: roll_pos.x = ti->x; roll_pos.y = ti->y + ti->h * 0.5f - ti->rolled_h * 0.5f; break;
+        }
+        DrawRectangle(roll_pos.x - ti->w * 0.5f, roll_pos.y - ti->rolled_h * 0.5f, ti->w, ti->rolled_h, ti->tint);
+        DrawTextPro(text_font, ti->title, roll_pos, (Vector2) { ti->w * 0.5f - ti->rolled_h - arrow_off, ti->rolled_h * 0.5f }, 0.0f, ti->rolled_h, 1.0f, COLOR_TAB_TEXT);
+        if ((ti->is_open && ti->roll_dir == TAB_ROLL_UP) || (!ti->is_open && ti->roll_dir == TAB_ROLL_DOWN))
+            DrawTriangle(
+                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
+                (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
+                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h - arrow_off, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
+                COLOR_TAB_TEXT
+            );
+        else
+            DrawTriangle(
+                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h - arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
+                (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
+                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
+                COLOR_TAB_TEXT
+            );
+    }
+
     EndDrawing();
     render_idx = 0;
+    tab_idx = 0;
 }
 
 void GFX_DeInit(void) {
     UnloadFont(sym_font);
+    UnloadFont(text_font);
+    UnloadTexture(card_atlas.texture);
     UnloadTexture(figure_atlas);
     CloseWindow();
 }

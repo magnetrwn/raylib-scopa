@@ -11,25 +11,22 @@ void UI_Init(void) {
     el_idx = 0;
 }
 
-void UI_IfCreateLabel(IfElement* ie, const char* text, const Rectangle info) {
-    ie->type = IF_EL_LABEL;
-    ie->text = text;
-    ie->corners[0] = (Vector2) { info.x, info.y };
-    ie->corners[1] = (Vector2) { info.x + info.width, info.y };
-    ie->corners[2] = (Vector2) { info.x + info.width, info.y + info.height };
-    ie->corners[3] = (Vector2) { info.x, info.y + info.height };
+void UI_IfCreateTab(IfElement* ie, const TabInfo* ti) {
+    ie->type = IF_EL_TAB;
+    ie->tab = ti;
+    ie->corners[0].x = ti->x - ti->w * 0.5f;
+    switch (ti->roll_dir) {
+        case TAB_ROLL_UP:
+            ie->corners[0].y = ti->y - ti->h * 0.5f;
+            break;
+        case TAB_ROLL_DOWN:
+            ie->corners[0].y = ti->y + ti->h * 0.5f - ti->rolled_h;
+            break;
+    }
+    // TODO make tabs cleaner by making a union also take away the extra corners[] elements left unused
 }
 
-void UI_IfCreateButton(IfElement* ie, const char* text, const Rectangle info) {
-    ie->type = IF_EL_BTN;
-    ie->text = text;
-    ie->corners[0] = (Vector2) { info.x, info.y };
-    ie->corners[1] = (Vector2) { info.x + info.width, info.y };
-    ie->corners[2] = (Vector2) { info.x + info.width, info.y + info.height };
-    ie->corners[3] = (Vector2) { info.x, info.y + info.height };
-}
-
-void UI_IfCreateCard(IfElement* ie, CardInfo* ci) {
+void UI_IfCreateCard(IfElement* ie, const CardInfo* ci) {
     ie->type = IF_EL_CARD;
     ie->card = ci;
 
@@ -68,22 +65,20 @@ void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
         switch (ie->type) {
             case IF_EL_NONE:
                 break;
-            case IF_EL_LABEL:
-                break;
-            case IF_EL_CARD:
-                ie->card->tint = WHITE;
-                evt_arr[i] = IF_EVT_NONE;
-                if (CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[1], ie->corners[2]) ||
-                    CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[2], ie->corners[3])) {
-                    //ie->card->tint = COLOR_HOVER;
+            case IF_EL_TAB:
+                if (CheckCollisionPointRec(mouse_pos, (Rectangle) { ie->corners[0].x, ie->corners[0].y, ie->tab->w, ie->tab->rolled_h })) {
                     evt_arr[i] = IF_EVT_HOVER;
-                    if (mouse_click) {
-                        //ie->card->tint = COLOR_CLICK;
+                    if (mouse_click)
                         evt_arr[i] = IF_EVT_CLICK;
-                    }
                 }
                 break;
-            case IF_EL_BTN:
+            case IF_EL_CARD:
+                if (CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[1], ie->corners[2]) ||
+                    CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[2], ie->corners[3])) {
+                    evt_arr[i] = IF_EVT_HOVER;
+                    if (mouse_click)
+                        evt_arr[i] = IF_EVT_CLICK;
+                }
                 break;
             default:
                 break;

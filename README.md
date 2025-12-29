@@ -2,7 +2,9 @@
 
 **The game of Scopa (Italian word for "sweep") made using Raylib in C, for 2-4 players locally or over the network, with simple AI opponents available.**
 
-<center><img src=assets/img/demo-fly.gif width=75% alt="Demo Flying Cards"></center>
+<center><img src=assets/img/demo-fly.gif width=75% alt="Demo Flying Cards"><p>Initial card handling setup.</p></center>
+
+<center><img src=assets/img/demo-interface.png width=75% alt="Demo Flying Cards"><p>Initial test interface.</p></center>
 
 ## Quick Start
 

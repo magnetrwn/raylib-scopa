@@ -204,6 +204,7 @@ void GFX_Init(void) {
     UnloadImage(i);
 
     render_idx = 0;
+    tab_idx = 0;
     theme_idx = 0;
 }
 

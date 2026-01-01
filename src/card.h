@@ -33,5 +33,6 @@ typedef struct _Card {
 } Card;
 
 bool CARD_IsError(const Card* c);
+bool CARD_IsEqual(const Card* a, const Card* b);
 
 #endif // CARD_H_

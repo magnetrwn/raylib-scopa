@@ -28,6 +28,12 @@ typedef struct _IfElement {
     Vector2 corners[4]; 
 } IfElement; // you should use this to keep track of UI elements together with CardInfo[]
 
+typedef struct _IfTickInputs {
+    Vector2 mouse_pos;
+    bool mouse_click_l;
+    bool mouse_down_l;
+} IfTickInputs;
+
 // typedef enum _DetailType {
 //     PLAYER_DECK,
 //     PLAYER_DECK_DETAILS,
@@ -42,8 +48,9 @@ void UI_IfCreateTab(IfElement* ie, const TabInfo* ti);
 void UI_IfCreateCard(IfElement* ie, const CardInfo* ci);
 void UI_IfPlace(const IfElement* ie);
 void UI_IfPlaceN(const IfElement* ie, int n);
-void UI_IfTick(Vector2 mouse_pos, bool mouse_click);
-
+void UI_IfTick(const IfTickInputs* in);
 IfEvtIdx UI_EvtPop(void);
+IfEvtIdx UI_EvtFind(IfElEvent type);
+void UI_IfClear(void);
 
 #endif // UI_H_

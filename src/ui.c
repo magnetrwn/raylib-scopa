@@ -57,7 +57,7 @@ void UI_IfPlaceN(const IfElement* ie, int n) {
     el_idx += n;
 }
 
-void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
+void UI_IfTick(const IfTickInputs* in) {
     for (int i = 0; i < el_idx; ++i) {
         IfElement* ie = &el_arr[i];
         evt_arr[i] = IF_EVT_NONE;
@@ -66,17 +66,17 @@ void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
             case IF_EL_NONE:
                 break;
             case IF_EL_TAB:
-                if (CheckCollisionPointRec(mouse_pos, (Rectangle) { ie->corners[0].x, ie->corners[0].y, ie->tab->w, ie->tab->rolled_h })) {
+                if (CheckCollisionPointRec(in->mouse_pos, (Rectangle) { ie->corners[0].x, ie->corners[0].y, ie->tab->w, ie->tab->rolled_h })) {
                     evt_arr[i] = IF_EVT_HOVER;
-                    if (mouse_click)
+                    if (in->mouse_click_l)
                         evt_arr[i] = IF_EVT_CLICK;
                 }
                 break;
             case IF_EL_CARD:
-                if (CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[1], ie->corners[2]) ||
-                    CheckCollisionPointTriangle(mouse_pos, ie->corners[0], ie->corners[2], ie->corners[3])) {
+                if (CheckCollisionPointTriangle(in->mouse_pos, ie->corners[0], ie->corners[1], ie->corners[2]) ||
+                    CheckCollisionPointTriangle(in->mouse_pos, ie->corners[0], ie->corners[2], ie->corners[3])) {
                     evt_arr[i] = IF_EVT_HOVER;
-                    if (mouse_click)
+                    if (in->mouse_click_l)
                         evt_arr[i] = IF_EVT_CLICK;
                 }
                 break;
@@ -85,11 +85,11 @@ void UI_IfTick(Vector2 mouse_pos, bool mouse_click) {
         }
     }
 
-    el_idx = 0;
+    // make sure to call UI_IfClear() after processing events at the end of the main tick loop
 }
 
 IfEvtIdx UI_EvtPop(void) {
-    for (int i = MAX_IF_ELS_IN_TICK - 1; i >= 0; --i) {
+    for (int i = el_idx; i >= 0; --i) {
         if (evt_arr[i] == IF_EVT_NONE)
             continue;
 
@@ -98,4 +98,18 @@ IfEvtIdx UI_EvtPop(void) {
         return ret;
     }
     return NO_EVENTS_LEFT;
+}
+
+IfEvtIdx UI_EvtFind(IfElEvent type) {
+    for (int i = el_idx; i >= 0; --i) {
+        if (evt_arr[i] != type)
+            continue;
+
+        return (IfEvtIdx) { evt_arr[i], i };
+    }
+    return NO_EVENTS_LEFT;
+}
+
+void UI_IfClear(void) {
+    el_idx = 0;
 }

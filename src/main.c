@@ -33,9 +33,9 @@ int main(void) {
     }
 
     TabInfo ti_arr[TABS_DEMO_N] = {
-        { "Table Details", 200, 100, 400, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
-        { "Statistics", WINDOW_W - 200, 100, 400, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
-        { "Chances", WINDOW_W - 200, WINDOW_H - 100, 400, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_DOWN }
+        { "Table Details", 160, 100, 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
+        { "Statistics", WINDOW_W - 160, 100, 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
+        { "Chances", WINDOW_W - 160, WINDOW_H - 100, 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_DOWN }
     };
 
     IfElement ie_arr[CARDS_DEMO_N]; // TODO make another array of these for other UI elements
@@ -60,7 +60,13 @@ int main(void) {
 
         UI_IfPlaceN(ie_arr, CARDS_DEMO_N);
         UI_IfPlaceN(tab_arr, TABS_DEMO_N);
-        UI_IfTick(GetMousePosition(), IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+
+        IfTickInputs inputs = {
+            .mouse_pos = GetMousePosition(),
+            .mouse_click_l = IsMouseButtonPressed(MOUSE_BUTTON_LEFT),
+            .mouse_down_l = IsMouseButtonDown(MOUSE_BUTTON_LEFT)
+        };
+        UI_IfTick(&inputs);
 
         IfEvtIdx e;
         while ((e = UI_EvtPop()).evt != IF_EVT_NONE) {
@@ -68,23 +74,24 @@ int main(void) {
                 switch (e.evt) {
                     case IF_EVT_CLICK:
                         ci_arr[e.idx].tint = COLOR_CLICK;
-                        ci_arr[e.idx].is_flipped = !ci_arr[e.idx].is_flipped;
-                        goto event_continue;
+                        // ci_arr[e.idx].is_flipped = !ci_arr[e.idx].is_flipped;
+                        goto event_done;
                     case IF_EVT_HOVER:
                         ci_arr[e.idx].tint = COLOR_HOVER;
-                        goto event_continue;
+                        goto event_done;
                 }
             else if (e.idx - CARDS_DEMO_N < TABS_DEMO_N)
                 switch (e.evt) {
                     case IF_EVT_CLICK:
                         ti_arr[e.idx - CARDS_DEMO_N].is_open = !ti_arr[e.idx - CARDS_DEMO_N].is_open;
-                        goto event_continue;
+                        goto event_done;
                     case IF_EVT_HOVER:
                         ti_arr[e.idx - CARDS_DEMO_N].tint = COLOR_HOVER;
-                        goto event_continue;
+                        goto event_done;
                 }
         }
-        event_continue:
+        event_done:
+        UI_IfClear();
 
         GFX_CardDrawN(ci_arr, CARDS_DEMO_N);
         GFX_TabDrawN(ti_arr, TABS_DEMO_N);

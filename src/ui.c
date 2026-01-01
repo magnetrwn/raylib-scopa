@@ -14,16 +14,15 @@ void UI_Init(void) {
 void UI_IfCreateTab(IfElement* ie, const TabInfo* ti) {
     ie->type = IF_EL_TAB;
     ie->tab = ti;
-    ie->corners[0].x = ti->x - ti->w * 0.5f;
+    ie->pos.x = ti->x - ti->w * 0.5f;
     switch (ti->roll_dir) {
         case TAB_ROLL_UP:
-            ie->corners[0].y = ti->y - ti->h * 0.5f;
+            ie->pos.y = ti->y - ti->h * 0.5f;
             break;
         case TAB_ROLL_DOWN:
-            ie->corners[0].y = ti->y + ti->h * 0.5f - ti->rolled_h;
+            ie->pos.y = ti->y + ti->h * 0.5f - ti->rolled_h;
             break;
     }
-    // TODO make tabs cleaner by making a union also take away the extra corners[] elements left unused
 }
 
 void UI_IfCreateCard(IfElement* ie, const CardInfo* ci) {
@@ -66,7 +65,7 @@ void UI_IfTick(const IfTickInputs* in) {
             case IF_EL_NONE:
                 break;
             case IF_EL_TAB:
-                if (CheckCollisionPointRec(in->mouse_pos, (Rectangle) { ie->corners[0].x, ie->corners[0].y, ie->tab->w, ie->tab->rolled_h })) {
+                if (CheckCollisionPointRec(in->mouse_pos, (Rectangle) { ie->pos.x, ie->pos.y, ie->tab->w, ie->tab->rolled_h })) {
                     evt_arr[i] = IF_EVT_HOVER;
                     if (in->mouse_click_l)
                         evt_arr[i] = IF_EVT_CLICK;

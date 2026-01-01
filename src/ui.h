@@ -25,7 +25,7 @@ typedef struct _IfEvtIdx {
 typedef struct _IfElement {
     IfElType type;
     union { const TabInfo* tab; const CardInfo* card; };
-    Vector2 corners[4]; 
+    union { Vector2 pos; Vector2 corners[4]; };
 } IfElement; // you should use this to keep track of UI elements together with CardInfo[]
 
 typedef struct _IfTickInputs {

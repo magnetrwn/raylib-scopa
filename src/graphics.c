@@ -51,7 +51,6 @@ const Rectangle FIGURE_ATLAS_SRC[3] = {
     { 560.0f + FIGURE_ATLAS_PAD_PX*3, 0.0f, 280.0f, 480.0f }, // k
 };
 
-static RenderTexture2D card_atlas;
 static Font sym_font;
 static Font text_font;
 static Texture2D figure_atlas;
@@ -208,17 +207,17 @@ void GFX_Init(void) {
     theme_idx = 0;
 }
 
-void GFX_BuildCardTextureAtlas(int card_w, int card_h) {
+void GFX_BuildCardTextureAtlas(RenderTexture2D* atlas, int card_w, int card_h) {
     card_w *= ATLAS_UPSCALE_MUL;
     card_h *= ATLAS_UPSCALE_MUL;
 
-    card_atlas = LoadRenderTexture(
+    *atlas = LoadRenderTexture(
         CARD_RANKS * card_w + (CARD_RANKS + 1) * ATLAS_PAD_PX, 
         (CARD_SUITS + 1) * card_h + (CARD_SUITS + 2) * ATLAS_PAD_PX // add a row for back drawing
     );
-    SetTextureWrap(card_atlas.texture, TEXTURE_WRAP_CLAMP);
+    SetTextureWrap(atlas->texture, TEXTURE_WRAP_CLAMP);
 
-    BeginTextureMode(card_atlas);
+    BeginTextureMode(*atlas);
     ClearBackground(BLANK);
 
     for (int s = 0; s < CARD_SUITS; ++s) {
@@ -317,8 +316,8 @@ void GFX_BuildCardTextureAtlas(int card_w, int card_h) {
     }
 
     EndTextureMode();
-    GenTextureMipmaps(&card_atlas.texture);
-    SetTextureFilter(card_atlas.texture, TEXTURE_FILTER_TRILINEAR);
+    GenTextureMipmaps(&atlas->texture);
+    SetTextureFilter(atlas->texture, TEXTURE_FILTER_TRILINEAR);
 }
 
 void GFX_SetCardRearTheme(int idx) {
@@ -373,7 +372,7 @@ void GFX_RenderTick(void) {
             continue;
         if (!ci->is_flipped)
             DrawTexturePro(
-                card_atlas.texture, 
+                ci->atlas->texture, 
                 _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
                 (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
                 (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
@@ -382,7 +381,7 @@ void GFX_RenderTick(void) {
             );
         else
             DrawTexturePro(
-                card_atlas.texture, 
+                ci->atlas->texture, 
                 _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
                 (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
                 (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
@@ -436,7 +435,7 @@ void GFX_RenderTick(void) {
 void GFX_DeInit(void) {
     UnloadFont(sym_font);
     UnloadFont(text_font);
-    UnloadTexture(card_atlas.texture);
+    //UnloadTexture(ci->atlas->texture);
     UnloadTexture(figure_atlas);
     CloseWindow();
 }

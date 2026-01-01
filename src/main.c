@@ -15,12 +15,17 @@ int main(void) {
     CFG_Load();
     RND_InitOnce();
     GFX_Init();
-    GFX_BuildCardTextureAtlas(CARD_W, CARD_H);
+
+    RenderTexture2D big_atlas, small_atlas;
+    GFX_BuildCardTextureAtlas(&big_atlas, CARD_W, CARD_H);
+    GFX_BuildCardTextureAtlas(&small_atlas, CARD_W / 2, CARD_H / 2);
+
     GFX_SetCardRearTheme(CARD_REAR_THEME_IDX);
     UI_Init();
 
     CardInfo ci_arr[CARDS_DEMO_N];
     for (int i = 0; i < CARDS_DEMO_N; ++i) {
+        ci_arr[i].atlas = &big_atlas;
         ci_arr[i].c.suit = (i / CARD_RANKS) % CARD_SUITS;
         ci_arr[i].c.rank = 1 + (i % CARD_RANKS);
         ci_arr[i].w = CARD_W;
@@ -83,6 +88,7 @@ int main(void) {
             else if (e.idx - CARDS_DEMO_N < TABS_DEMO_N)
                 switch (e.evt) {
                     case IF_EVT_CLICK:
+                        ti_arr[e.idx - CARDS_DEMO_N].tint = COLOR_CLICK;
                         ti_arr[e.idx - CARDS_DEMO_N].is_open = !ti_arr[e.idx - CARDS_DEMO_N].is_open;
                         goto event_done;
                     case IF_EVT_HOVER:
@@ -103,6 +109,8 @@ int main(void) {
             ti_arr[i].tint = COLOR_TAB_BG;
     }
     
+    UnloadTexture(big_atlas.texture);
+    UnloadTexture(small_atlas.texture); // TODO fit into rest of graphics interface
     GFX_DeInit();
     return 0;
 }

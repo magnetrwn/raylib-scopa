@@ -32,6 +32,7 @@ static const Color COLOR_THEMES[] = {
 typedef struct _CardInfo {
     Card c;
     float x, y, w, h, angle_deg;
+    const RenderTexture2D* atlas;
     Color tint;
     bool is_flipped;
 } CardInfo; // you should use this to keep track of cards instead of just Card[] alone
@@ -52,7 +53,7 @@ typedef struct _TabInfo {
 void GFX_Init(void);
 void GFX_DeInit(void);
 
-void GFX_BuildCardTextureAtlas(int card_w, int card_h);
+void GFX_BuildCardTextureAtlas(RenderTexture2D* atlas, int card_w, int card_h);
 void GFX_SetCardRearTheme(int idx);
 
 void GFX_CardDraw(const CardInfo* ci);

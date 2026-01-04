@@ -5,8 +5,10 @@
 #include "ui.h"
 #include "config.h"
 
-#define CARD_W (WINDOW_W / 16 + 64)
-#define CARD_H (WINDOW_W / 8 + 84)
+#define CARD_W_BIG (164)
+#define CARD_H_BIG (280)
+#define CARD_W_SMALL (72)
+#define CARD_H_SMALL (112)
 
 #define CARDS_DEMO_N 40
 #define TABS_DEMO_N 3
@@ -17,30 +19,46 @@ int main(void) {
     GFX_Init();
 
     RenderTexture2D big_atlas, small_atlas;
-    GFX_BuildCardTextureAtlas(&big_atlas, CARD_W, CARD_H);
-    GFX_BuildCardTextureAtlas(&small_atlas, CARD_W / 2, CARD_H / 2);
+    GFX_BuildCardTextureAtlas(&big_atlas, CARD_W_BIG, CARD_H_BIG);
+    GFX_BuildCardTextureAtlas(&small_atlas, CARD_W_SMALL, CARD_H_SMALL);
 
     GFX_SetCardRearTheme(CARD_REAR_THEME_IDX);
+
     UI_Init();
 
     CardInfo ci_arr[CARDS_DEMO_N];
-    for (int i = 0; i < CARDS_DEMO_N; ++i) {
+    for (int i = 0; i < CARDS_DEMO_N / 2; ++i) {
         ci_arr[i].atlas = &big_atlas;
         ci_arr[i].c.suit = (i / CARD_RANKS) % CARD_SUITS;
         ci_arr[i].c.rank = 1 + (i % CARD_RANKS);
-        ci_arr[i].w = CARD_W;
-        ci_arr[i].h = CARD_H;
-        ci_arr[i].x = RND_Get(CARD_W, WINDOW_W - CARD_W);
-        ci_arr[i].y = RND_Get(CARD_H, WINDOW_H - CARD_H);
-        ci_arr[i].angle_deg = (float) RND_Get(-15, +15);
+        ci_arr[i].w = CARD_W_BIG;
+        ci_arr[i].h = CARD_H_BIG;
+        ci_arr[i].x = RND_Get(CARD_W_BIG, WINDOW_W - CARD_W_BIG);
+        ci_arr[i].y = RND_Get(CARD_H_BIG, WINDOW_H - CARD_H_BIG);
+        ci_arr[i].angle_deg = RND_Get(-3, +3) * 5.0f;
         ci_arr[i].is_flipped = !RND_Get(0, 2);
+        ci_arr[i].is_active = true;
+        ci_arr[i].tint = WHITE;
+    }
+
+    for (int i = CARDS_DEMO_N / 2; i < CARDS_DEMO_N; ++i) {
+        ci_arr[i].atlas = &small_atlas;
+        ci_arr[i].c.suit = (i / CARD_RANKS) % CARD_SUITS;
+        ci_arr[i].c.rank = 1 + (i % CARD_RANKS);
+        ci_arr[i].w = CARD_W_SMALL;
+        ci_arr[i].h = CARD_H_SMALL;
+        ci_arr[i].x = RND_Get(CARD_W_SMALL, WINDOW_W - CARD_W_SMALL);
+        ci_arr[i].y = RND_Get(CARD_H_SMALL, WINDOW_H - CARD_H_SMALL);
+        ci_arr[i].angle_deg = RND_Get(-3, +3) * 5.0f;
+        ci_arr[i].is_flipped = !RND_Get(0, 2);
+        ci_arr[i].is_active = false;
         ci_arr[i].tint = WHITE;
     }
 
     TabInfo ti_arr[TABS_DEMO_N] = {
         { "Table Details", 160, 100, 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
-        { "Statistics", WINDOW_W - 160, 100, 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
-        { "Chances", WINDOW_W - 160, WINDOW_H - 100, 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_DOWN }
+        { "Statistics", 480 + (WINDOW_W - 640) / 2, 100, WINDOW_W - 320, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_UP },
+        { "Chances", WINDOW_W / 2, WINDOW_H - 100, WINDOW_W, 200, 24, COLOR_TAB_BG, false, TAB_ROLL_DOWN }
     };
 
     IfElement ie_arr[CARDS_DEMO_N]; // TODO make another array of these for other UI elements
@@ -75,7 +93,7 @@ int main(void) {
 
         IfEvtIdx e;
         while ((e = UI_EvtPop()).evt != IF_EVT_NONE) {
-            if (e.idx < CARDS_DEMO_N)
+            if (e.idx < CARDS_DEMO_N && ci_arr[e.idx].is_active)
                 switch (e.evt) {
                     case IF_EVT_CLICK:
                         ci_arr[e.idx].tint = COLOR_CLICK;
@@ -91,9 +109,9 @@ int main(void) {
                         ti_arr[e.idx - CARDS_DEMO_N].tint = COLOR_CLICK;
                         ti_arr[e.idx - CARDS_DEMO_N].is_open = !ti_arr[e.idx - CARDS_DEMO_N].is_open;
                         goto event_done;
-                    case IF_EVT_HOVER:
-                        ti_arr[e.idx - CARDS_DEMO_N].tint = COLOR_HOVER;
-                        goto event_done;
+                    // case IF_EVT_HOVER:
+                    //     ti_arr[e.idx - CARDS_DEMO_N].tint = COLOR_HOVER;
+                    //     goto event_done;
                 }
         }
         event_done:

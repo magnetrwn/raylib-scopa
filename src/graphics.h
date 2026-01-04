@@ -20,7 +20,7 @@
 #define COLOR_HOVER     (Color) { 219, 235, 160, 255 }
 #define COLOR_CLICK     (Color) { 186, 255,  66, 255 }
 
-#define COLOR_THEMES_N (sizeof(COLOR_THEMES)/4)
+#define COLOR_THEMES_N  (sizeof(COLOR_THEMES) / sizeof(Color))
 static const Color COLOR_THEMES[] = { 
     (Color) {   0,  69, 183, 255 }, 
     (Color) { 170, 220, 200, 255 },
@@ -35,6 +35,7 @@ typedef struct _CardInfo {
     const RenderTexture2D* atlas;
     Color tint;
     bool is_flipped;
+    bool is_active;
 } CardInfo; // you should use this to keep track of cards instead of just Card[] alone
 
 typedef enum _TabRollDir {

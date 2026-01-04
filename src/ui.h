@@ -2,7 +2,7 @@
 #define UI_H_
 
 #include "graphics.h"
-#define MAX_IF_ELS_IN_TICK MAX_CARDS_IN_TICK
+#define MAX_IF_ELS_IN_TICK MAX_GFX_EL_IN_TICK
 #define NO_EVENTS_LEFT (IfEvtIdx) { IF_EVT_NONE, -1 }
 
 typedef enum _IfElType {

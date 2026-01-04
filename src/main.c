@@ -65,17 +65,17 @@ int main(void) {
     for (int s = 0; s < CARD_SUITS; ++s)
         for (int r = 1; r <= CARD_RANKS; ++r) {
             int i = s * CARD_RANKS + (r - 1);
-            ci_arr[i].atlas = &small_atlas;
-            ci_arr[i].c.suit = s;
-            ci_arr[i].c.rank = r;
-            ci_arr[i].w = CARD_W_SMALL;
-            ci_arr[i].h = CARD_H_SMALL;
-            ci_arr[i].x = ti_arr[1].x - ti_arr[1].w / 2 + 48 + (r - 1) * (CARD_W_SMALL - 50) + s * 10 * (CARD_W_SMALL - 50) + s * 60;
-            ci_arr[i].y = ti_arr[1].y / 2;
-            ci_arr[i].angle_deg = 0.0f;
-            ci_arr[i].is_flipped = true;
-            ci_arr[i].is_active = false;
-            ci_arr[i].tint = WHITE;
+            ci_stats_arr[i].atlas = &small_atlas;
+            ci_stats_arr[i].c.suit = s;
+            ci_stats_arr[i].c.rank = r;
+            ci_stats_arr[i].w = CARD_W_SMALL;
+            ci_stats_arr[i].h = CARD_H_SMALL;
+            ci_stats_arr[i].x = ti_arr[1].x - ti_arr[1].w / 2 + 48 + (r - 1) * (CARD_W_SMALL - 50) + s * 10 * (CARD_W_SMALL - 50) + s * 60;
+            ci_stats_arr[i].y = ti_arr[1].y;
+            ci_stats_arr[i].angle_deg = 0.0f;
+            ci_stats_arr[i].is_flipped = true;
+            ci_stats_arr[i].is_active = false;
+            ci_stats_arr[i].tint = WHITE;
         }
 
     IfElement ie_card_arr[CARDS_DEMO_N];
@@ -133,11 +133,11 @@ int main(void) {
         event_done:
         UI_IfClear();
 
-        GFX_CardDrawN(ci_arr, CARDS_DEMO_N);
-        GFX_TabDrawN(ti_arr, TABS_DEMO_N);
+        GFX_DrawCardN(ci_arr, CARDS_DEMO_N);
+        GFX_DrawTabN(ti_arr, TABS_DEMO_N);
 
         if (ti_arr[1].is_open)
-            GFX_CardDrawN(ci_stats_arr, CARDS_N);
+            GFX_DrawCardN(ci_stats_arr, CARDS_N);
 
         GFX_RenderTick();
 

@@ -44,6 +44,12 @@ static const CardSymbolInfo CARD_SYMBOLS[] = {
     { .syms = { GFX_TOP_LEFT_SYMBOL, GFX_END_SYMBOL }},
 };
 
+typedef struct _GfxEl {
+    GfxElType type;
+    union { const CardInfo* card; const TabInfo*  tab; };
+    int z;
+} GfxEl;
+
 #define FIGURE_ATLAS_PAD_PX 2.0f
 const Rectangle FIGURE_ATLAS_SRC[3] = {
     { FIGURE_ATLAS_PAD_PX, 0.0f, 280.0f, 480.0f }, // j
@@ -54,10 +60,8 @@ const Rectangle FIGURE_ATLAS_SRC[3] = {
 static Font sym_font;
 static Font text_font;
 static Texture2D figure_atlas;
-static CardInfo render_arr[MAX_CARDS_IN_TICK];
+static GfxEl render_arr[MAX_GFX_EL_IN_TICK];
 static int render_idx;
-static TabInfo tab_arr[MAX_TABS_IN_TICK];
-static int tab_idx;
 static int theme_idx;
 
 static void _DrawCardBase(const CardInfo* ci, Color color) {
@@ -185,6 +189,36 @@ static inline Rectangle _CardAtlasSrcBack(int theme, int card_w, int card_h) {
     }; 
 }
 
+static inline void _Enqueue(GfxElType type, int z, const void* ptr) {
+    if (!ptr || render_idx >= MAX_GFX_EL_IN_TICK)
+        return;
+
+    GfxEl* el = &render_arr[render_idx++];
+    el->type = type;
+    el->z = z;
+
+    switch (type) {
+        case GFX_DRAW_CARD:
+            el->card = (const CardInfo*) ptr;
+            break;
+        case GFX_DRAW_TAB:
+            el->tab = (const TabInfo*) ptr;
+            break;
+    }
+}
+
+static void _StableSortByZ(GfxEl* a, int n) {
+    for (int i = 1; i < n; ++i) {
+        GfxEl key = a[i];
+        int j = i - 1;
+        while (j >= 0 && a[j].z > key.z) {
+            a[j + 1] = a[j];
+            --j;
+        }
+        a[j + 1] = key;
+    }
+}
+
 // public api
 
 void GFX_Init(void) {
@@ -203,7 +237,6 @@ void GFX_Init(void) {
     UnloadImage(i);
 
     render_idx = 0;
-    tab_idx = 0;
     theme_idx = 0;
 }
 
@@ -326,112 +359,116 @@ void GFX_SetCardRearTheme(int idx) {
     theme_idx = idx;
 }
 
-void GFX_CardDraw(const CardInfo* ci) {
-    if (ci == NULL || render_idx >= MAX_CARDS_IN_TICK)
-        return;
-    render_arr[render_idx++] = *ci;
+void GFX_DrawCard(const CardInfo* ci) { 
+    _Enqueue(GFX_DRAW_CARD, GFX_Z_DEFAULT, ci); 
 }
 
-void GFX_CardDrawN(const CardInfo* ci, int n) {
-    if (ci == NULL || n <= 0)
-        return;
-    if (render_idx + n >= MAX_CARDS_IN_TICK)
-        n = MAX_CARDS_IN_TICK - render_idx;
-    memcpy(&render_arr[render_idx], ci, sizeof(CardInfo) * n);
-    render_idx += n;
+void GFX_DrawTab(const TabInfo* ti) { 
+    _Enqueue(GFX_DRAW_TAB, GFX_Z_DEFAULT, ti); 
 }
 
-void GFX_TabDraw(const TabInfo* ti) {
-    if (ti == NULL || tab_idx >= MAX_TABS_IN_TICK)
-        return;
-    tab_arr[tab_idx++] = *ti;
+void GFX_DrawCardZ(const CardInfo* ci, int z) { 
+    _Enqueue(GFX_DRAW_CARD, z, ci); 
 }
 
-void GFX_TabDrawN(const TabInfo* ti, int n) {
-    if (ti == NULL || n <= 0)
-        return;
-    if (tab_idx + n >= MAX_TABS_IN_TICK)
-        n = MAX_TABS_IN_TICK - tab_idx;
-    memcpy(&tab_arr[tab_idx], ti, sizeof(TabInfo) * n);
-    tab_idx += n;
+void GFX_DrawTabZ(const TabInfo* ti, int z) { 
+    _Enqueue(GFX_DRAW_TAB, z, ti); 
+}
+
+void GFX_DrawCardN(const CardInfo* ci, int n) { 
+    for (int i = 0; i < n; ++i) 
+        GFX_DrawCard(&ci[i]); 
+}
+
+void GFX_DrawTabN(const TabInfo* ti, int n) { 
+    for (int i = 0; i < n; ++i) 
+        GFX_DrawTab(&ti[i]); 
+}
+
+void GFX_DrawCardZN(const CardInfo* ci, int z, int n) { 
+    for (int i = 0; i < n; ++i) 
+        GFX_DrawCardZ(&ci[i], z); 
+}
+
+void GFX_DrawTabZN(const TabInfo* ti, int z, int n) { 
+    for (int i = 0; i < n; ++i) 
+        GFX_DrawTabZ(&ti[i], z); 
 }
 
 void GFX_RenderTick(void) {
     BeginDrawing();
     ClearBackground(COLOR_BG);
+    _StableSortByZ(render_arr, render_idx);
 
-    // DrawTextureRec(atlas->texture,
-    //     (Rectangle) { 0, -160, (float) atlas->texture.width, (float) -atlas->texture.height },
-    //     (Vector2) { 0, 0 }, 
-    //     (Color) { 255, 255, 255, 255 }
-    // );
-
-    // TODO turn the render and tab arrays into a single drawable array and switch over a type tag, so render order can be kept
-
-    for (int i = 0; i < tab_idx; ++i) {
-        TabInfo* ti = &tab_arr[i];
-        if (ti->w <= 0 || ti->h <= 0)
-            continue;
-
-        if (ti->is_open)
-            DrawRectanglePro(
-                (Rectangle) { ti->x, ti->y, ti->w, ti->h },
-                (Vector2) { ti->w * 0.5f, ti->h * 0.5f },
-                0.0f,
-                COLOR_TAB_BG
-            );
-
-        const float arrow_off = 7.0f;
-        Vector2 roll_pos;
-        switch (ti->roll_dir) {
-            case TAB_ROLL_UP:   roll_pos.x = ti->x; roll_pos.y = ti->y - ti->h * 0.5f + ti->rolled_h * 0.5f; break;
-            case TAB_ROLL_DOWN: roll_pos.x = ti->x; roll_pos.y = ti->y + ti->h * 0.5f - ti->rolled_h * 0.5f; break;
-        }
-        DrawRectangle(roll_pos.x - ti->w * 0.5f, roll_pos.y - ti->rolled_h * 0.5f, ti->w, ti->rolled_h, ti->tint);
-        DrawTextPro(text_font, ti->title, roll_pos, (Vector2) { ti->w * 0.5f - ti->rolled_h - arrow_off, ti->rolled_h * 0.5f }, 0.0f, ti->rolled_h, 1.0f, COLOR_TAB_TEXT);
-        if ((ti->is_open && ti->roll_dir == TAB_ROLL_UP) || (!ti->is_open && ti->roll_dir == TAB_ROLL_DOWN))
-            DrawTriangle(
-                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
-                (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
-                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h - arrow_off, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
-                COLOR_TAB_TEXT
-            );
-        else
-            DrawTriangle(
-                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h - arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
-                (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
-                (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
-                COLOR_TAB_TEXT
-            );
-    }
-    
     for (int i = 0; i < render_idx; ++i) {
-        CardInfo* ci = &render_arr[i];
-        if (ci->w <= 0 || ci->h <= 0 || CARD_IsError(&ci->c))
-            continue;
-        if (!ci->is_flipped)
-            DrawTexturePro(
-                ci->atlas->texture, 
-                _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
-                (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
-                (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
-                ci->angle_deg, 
-                ci->tint
-            );
-        else
-            DrawTexturePro(
-                ci->atlas->texture, 
-                _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
-                (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
-                (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
-                ci->angle_deg, 
-                ci->tint
-            );
+        switch (render_arr[i].type) {
+            case GFX_DRAW_CARD: {
+                const CardInfo* ci = render_arr[i].card;
+                if (ci->w <= 0 || ci->h <= 0 || CARD_IsError(&ci->c))
+                    continue;
+                if (!ci->is_flipped)
+                    DrawTexturePro(
+                        ci->atlas->texture, 
+                        _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
+                        (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
+                        (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
+                        ci->angle_deg, 
+                        ci->tint
+                    );
+                else
+                    DrawTexturePro(
+                        ci->atlas->texture, 
+                        _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
+                        (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
+                        (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
+                        ci->angle_deg, 
+                        ci->tint
+                    );
+            }
+                break;
+                
+            case GFX_DRAW_TAB: {
+                const TabInfo* ti = render_arr[i].tab;
+                if (ti->w <= 0 || ti->h <= 0)
+                    continue;
+
+                if (ti->is_open)
+                    DrawRectanglePro(
+                        (Rectangle) { ti->x, ti->y, ti->w, ti->h },
+                        (Vector2) { ti->w * 0.5f, ti->h * 0.5f },
+                        0.0f,
+                        COLOR_TAB_BG
+                    );
+
+                const float arrow_off = 7.0f;
+                Vector2 roll_pos;
+                switch (ti->roll_dir) {
+                    case TAB_ROLL_UP:   roll_pos.x = ti->x; roll_pos.y = ti->y - ti->h * 0.5f + ti->rolled_h * 0.5f; break;
+                    case TAB_ROLL_DOWN: roll_pos.x = ti->x; roll_pos.y = ti->y + ti->h * 0.5f - ti->rolled_h * 0.5f; break;
+                }
+                DrawRectangle(roll_pos.x - ti->w * 0.5f, roll_pos.y - ti->rolled_h * 0.5f, ti->w, ti->rolled_h, ti->tint);
+                DrawTextPro(text_font, ti->title, roll_pos, (Vector2) { ti->w * 0.5f - ti->rolled_h - arrow_off, ti->rolled_h * 0.5f }, 0.0f, ti->rolled_h, 1.0f, COLOR_TAB_TEXT);
+                if ((ti->is_open && ti->roll_dir == TAB_ROLL_UP) || (!ti->is_open && ti->roll_dir == TAB_ROLL_DOWN))
+                    DrawTriangle(
+                        (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
+                        (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
+                        (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h - arrow_off, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
+                        COLOR_TAB_TEXT
+                    );
+                else
+                    DrawTriangle(
+                        (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h - arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
+                        (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
+                        (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
+                        COLOR_TAB_TEXT
+                    );
+            }
+                break;
+        }
     }
 
     EndDrawing();
     render_idx = 0;
-    tab_idx = 0;
 }
 
 void GFX_DeInit(void) {

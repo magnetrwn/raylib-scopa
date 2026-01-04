@@ -2,7 +2,7 @@
 #define DECK_H_
 
 #include "card.h"
-#define DECK_SIZE 40
+#define DECK_SIZE CARDS_N
 
 typedef struct _Deck {
     int cards[DECK_SIZE];

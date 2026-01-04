@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "raylib.h"
 #include "card.h"
-#define MAX_CARDS_IN_TICK    80    // max cards that can be rendered per tick
+#define MAX_CARDS_IN_TICK    384   // max cards that can be rendered per tick
 #define MAX_TABS_IN_TICK     8     // max tabs that can be rendered per tick
 #define MAX_SYMBOLS_PER_CARD 16    // max symbols (characters) that can be drawn per card, minus 1 for terminator
 

@@ -365,30 +365,8 @@ void GFX_RenderTick(void) {
     //     (Vector2) { 0, 0 }, 
     //     (Color) { 255, 255, 255, 255 }
     // );
-    
-    for (int i = 0; i < render_idx; ++i) {
-        CardInfo* ci = &render_arr[i];
-        if (ci->w <= 0 || ci->h <= 0 || CARD_IsError(&ci->c))
-            continue;
-        if (!ci->is_flipped)
-            DrawTexturePro(
-                ci->atlas->texture, 
-                _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
-                (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
-                (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
-                ci->angle_deg, 
-                ci->tint
-            );
-        else
-            DrawTexturePro(
-                ci->atlas->texture, 
-                _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
-                (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
-                (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
-                ci->angle_deg, 
-                ci->tint
-            );
-    }
+
+    // TODO turn the render and tab arrays into a single drawable array and switch over a type tag, so render order can be kept
 
     for (int i = 0; i < tab_idx; ++i) {
         TabInfo* ti = &tab_arr[i];
@@ -424,6 +402,30 @@ void GFX_RenderTick(void) {
                 (Vector2) { roll_pos.x - ti->w * 0.5f + arrow_off, roll_pos.y - ti->rolled_h * 0.5f + arrow_off },
                 (Vector2) { roll_pos.x - ti->w * 0.5f + ti->rolled_h * 0.5f, roll_pos.y + ti->rolled_h * 0.5f - arrow_off },
                 COLOR_TAB_TEXT
+            );
+    }
+    
+    for (int i = 0; i < render_idx; ++i) {
+        CardInfo* ci = &render_arr[i];
+        if (ci->w <= 0 || ci->h <= 0 || CARD_IsError(&ci->c))
+            continue;
+        if (!ci->is_flipped)
+            DrawTexturePro(
+                ci->atlas->texture, 
+                _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
+                (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
+                (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
+                ci->angle_deg, 
+                ci->tint
+            );
+        else
+            DrawTexturePro(
+                ci->atlas->texture, 
+                _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
+                (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
+                (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
+                ci->angle_deg, 
+                ci->tint
             );
     }
 

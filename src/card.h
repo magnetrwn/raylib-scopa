@@ -5,6 +5,7 @@
 #define CARD_ERROR ((Card) {0, _ERROR})
 #define CARD_SUITS 4
 #define CARD_RANKS 10
+#define CARDS_N (CARD_SUITS * CARD_RANKS)
 
 typedef enum _CardSuit {
     CARD_SUIT_HEARTS,

@@ -5,36 +5,36 @@
 #define MAX_IF_ELS_IN_TICK MAX_GFX_EL_IN_TICK
 #define NO_EVENTS_LEFT (IfEvtIdx) { IF_EVT_NONE, -1 }
 
-typedef enum _IfElType {
+typedef enum {
     IF_EL_NONE,
     IF_EL_TAB,
     IF_EL_CARD
 } IfElType;
 
-typedef enum _IfElEvent {
+typedef enum {
     IF_EVT_NONE,
     IF_EVT_HOVER,
     IF_EVT_CLICK
 } IfElEvent;
 
-typedef struct _IfEvtIdx {
+typedef struct {
     IfElEvent evt;
     int idx;
 } IfEvtIdx;
 
-typedef struct _IfElement {
+typedef struct {
     IfElType type;
     union { const TabInfo* tab; const CardInfo* card; };
     union { Vector2 pos; Vector2 corners[4]; };
 } IfElement; // you should use this to keep track of UI elements together with CardInfo[]
 
-typedef struct _IfTickInputs {
+typedef struct {
     Vector2 mouse_pos;
     bool mouse_click_l;
     bool mouse_down_l;
 } IfTickInputs;
 
-// typedef enum _DetailType {
+// typedef enum {
 //     PLAYER_DECK,
 //     PLAYER_DECK_DETAILS,
 //     TABLE,

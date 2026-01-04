@@ -22,5 +22,5 @@ Card DECK_Pop(Deck* d) {
     if (d->index < DECK_SIZE)
         return CARD_SET[d->cards[d->index++]];
     else
-        return CARD_ERROR;
+        return NO_CARDS_LEFT;
 }

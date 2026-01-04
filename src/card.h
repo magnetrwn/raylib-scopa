@@ -2,19 +2,19 @@
 #define CARD_H_
 
 #include <stdbool.h>
-#define CARD_ERROR ((Card) {0, _ERROR})
 #define CARD_SUITS 4
 #define CARD_RANKS 10
 #define CARDS_N (CARD_SUITS * CARD_RANKS)
+#define NO_CARDS_LEFT ((Card) {-1, -1})
 
-typedef enum _CardSuit {
+typedef enum {
     CARD_SUIT_HEARTS,
     CARD_SUIT_DIAMONDS,
     CARD_SUIT_CLUBS,
     CARD_SUIT_SPADES
 } CardSuit;
 
-typedef enum _CardRank {
+typedef enum {
     CARD_RANK_ACE = 1,
     CARD_RANK_TWO,
     CARD_RANK_THREE,
@@ -24,11 +24,10 @@ typedef enum _CardRank {
     CARD_RANK_SEVEN,
     CARD_RANK_JACK,
     CARD_RANK_QUEEN,
-    CARD_RANK_KING,
-    _ERROR
+    CARD_RANK_KING
 } CardRank;
 
-typedef struct _Card {
+typedef struct {
     CardSuit suit;
     CardRank rank;
 } Card;

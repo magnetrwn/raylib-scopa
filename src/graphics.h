@@ -29,7 +29,7 @@ static const Color COLOR_THEMES[] = {
     (Color) { 200, 178,  10, 255 }
 };
 
-typedef struct _CardInfo {
+typedef struct {
     Card c;
     float x, y, w, h, angle_deg;
     const RenderTexture2D* atlas;
@@ -38,12 +38,12 @@ typedef struct _CardInfo {
     bool is_active;
 } CardInfo; // you should use this to keep track of cards instead of just Card[] alone
 
-typedef enum _TabRollDir {
+typedef enum {
     TAB_ROLL_UP,
     TAB_ROLL_DOWN
 } TabRollDir;
 
-typedef struct _TabInfo {
+typedef struct {
     const char* title;
     float x, y, w, h, rolled_h;
     Color tint;
@@ -51,7 +51,7 @@ typedef struct _TabInfo {
     TabRollDir roll_dir;
 } TabInfo;
 
-typedef enum _GfxElType {
+typedef enum {
     GFX_DRAW_CARD,
     GFX_DRAW_TAB
 } GfxElType;

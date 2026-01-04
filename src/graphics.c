@@ -16,16 +16,16 @@
 #define GFX_END_SYMBOL      { 0, 0, SYMBOL_END }
 
 // types related to card symbol layout and listing
-typedef enum _CardSymbolType { 
+typedef enum { 
     SYMBOL_END, SYMBOL_RANK, SYMBOL_SUIT
 } CardSymbolType;
 
-typedef struct _CardSymbol {
+typedef struct {
     int rx, ry; // position of each symbol to draw based on the grid produced over the width and height using SYMBOL_x_DIV_BY
     CardSymbolType type;
 } CardSymbol;
 
-typedef struct _CardSymbolInfo {
+typedef struct {
     CardSymbol syms[MAX_SYMBOLS_PER_CARD];
 } CardSymbolInfo;
 
@@ -44,7 +44,7 @@ static const CardSymbolInfo CARD_SYMBOLS[] = {
     { .syms = { GFX_TOP_LEFT_SYMBOL, GFX_END_SYMBOL }},
 };
 
-typedef struct _GfxEl {
+typedef struct {
     GfxElType type;
     union { const CardInfo* card; const TabInfo*  tab; };
     int z;
@@ -64,7 +64,7 @@ static GfxEl render_arr[MAX_GFX_EL_IN_TICK];
 static int render_idx;
 static int theme_idx;
 
-static void _DrawCardBase(const CardInfo* ci, Color color) {
+static void _drawCardBase(const CardInfo* ci, Color color) {
     DrawRectanglePro(
         (Rectangle) { ci->x + ROUND_CORNER_PX, ci->y, ci->w - ROUND_CORNER_PX * 2, ci->h },
         (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
@@ -83,7 +83,7 @@ static void _DrawCardBase(const CardInfo* ci, Color color) {
     DrawCircle(ci->x + ci->w * 0.5f - ROUND_CORNER_PX, ci->y + ci->h * 0.5f - ROUND_CORNER_PX, ROUND_CORNER_PX, color);
 }
 
-static void _DrawCardFace(const CardInfo* ci) {
+static void _drawCardFace(const CardInfo* ci) {
     const float font_size = FONT_BASE_MUL * ci->h / SYMBOL_H_DIV_BY;
     Color sym_color = BLANK; // will keep the very last suit's color used for drawing the border
 
@@ -165,7 +165,7 @@ static void _DrawCardFace(const CardInfo* ci) {
     }
 }
 
-static inline Rectangle _CardAtlasSrcFace(int suit, int rank, int card_w, int card_h) { 
+static inline Rectangle _cardAtlasSrcFace(int suit, int rank, int card_w, int card_h) { 
     card_w *= ATLAS_UPSCALE_MUL;
     card_h *= ATLAS_UPSCALE_MUL;
 
@@ -177,7 +177,7 @@ static inline Rectangle _CardAtlasSrcFace(int suit, int rank, int card_w, int ca
     }; 
 }
 
-static inline Rectangle _CardAtlasSrcBack(int theme, int card_w, int card_h) { 
+static inline Rectangle _cardAtlasSrcBack(int theme, int card_w, int card_h) { 
     card_w *= ATLAS_UPSCALE_MUL;
     card_h *= ATLAS_UPSCALE_MUL;
 
@@ -189,7 +189,7 @@ static inline Rectangle _CardAtlasSrcBack(int theme, int card_w, int card_h) {
     }; 
 }
 
-static inline void _Enqueue(GfxElType type, int z, const void* ptr) {
+static inline void _enqueue(GfxElType type, int z, const void* ptr) {
     if (!ptr || render_idx >= MAX_GFX_EL_IN_TICK)
         return;
 
@@ -207,7 +207,7 @@ static inline void _Enqueue(GfxElType type, int z, const void* ptr) {
     }
 }
 
-static void _StableSortByZ(GfxEl* a, int n) {
+static void _stableSortByZ(GfxEl* a, int n) {
     for (int i = 1; i < n; ++i) {
         GfxEl key = a[i];
         int j = i - 1;
@@ -264,8 +264,8 @@ void GFX_BuildCardTextureAtlas(RenderTexture2D* atlas, int card_w, int card_h) {
             ci.h = card_h;
             ci.angle_deg = 0.0f;
 
-            _DrawCardBase(&ci, COLOR_CARD);
-            _DrawCardFace(&ci);
+            _drawCardBase(&ci, COLOR_CARD);
+            _drawCardFace(&ci);
         }
     }
 
@@ -276,7 +276,7 @@ void GFX_BuildCardTextureAtlas(RenderTexture2D* atlas, int card_w, int card_h) {
         back.w = card_w;
         back.h = card_h;
         back.angle_deg = 0.0f;
-        _DrawCardBase(&back, COLOR_THEMES[theme]);
+        _drawCardBase(&back, COLOR_THEMES[theme]);
 
         back.x = ATLAS_PAD_PX + theme * (card_w + ATLAS_PAD_PX);
         back.y = (ATLAS_PAD_PX + CARD_SUITS * (card_h + ATLAS_PAD_PX));
@@ -360,19 +360,19 @@ void GFX_SetCardRearTheme(int idx) {
 }
 
 void GFX_DrawCard(const CardInfo* ci) { 
-    _Enqueue(GFX_DRAW_CARD, GFX_Z_DEFAULT, ci); 
+    _enqueue(GFX_DRAW_CARD, GFX_Z_DEFAULT, ci); 
 }
 
 void GFX_DrawTab(const TabInfo* ti) { 
-    _Enqueue(GFX_DRAW_TAB, GFX_Z_DEFAULT, ti); 
+    _enqueue(GFX_DRAW_TAB, GFX_Z_DEFAULT, ti); 
 }
 
 void GFX_DrawCardZ(const CardInfo* ci, int z) { 
-    _Enqueue(GFX_DRAW_CARD, z, ci); 
+    _enqueue(GFX_DRAW_CARD, z, ci); 
 }
 
 void GFX_DrawTabZ(const TabInfo* ti, int z) { 
-    _Enqueue(GFX_DRAW_TAB, z, ti); 
+    _enqueue(GFX_DRAW_TAB, z, ti); 
 }
 
 void GFX_DrawCardN(const CardInfo* ci, int n) { 
@@ -398,7 +398,7 @@ void GFX_DrawTabZN(const TabInfo* ti, int z, int n) {
 void GFX_RenderTick(void) {
     BeginDrawing();
     ClearBackground(COLOR_BG);
-    _StableSortByZ(render_arr, render_idx);
+    _stableSortByZ(render_arr, render_idx);
 
     for (int i = 0; i < render_idx; ++i) {
         switch (render_arr[i].type) {
@@ -409,7 +409,7 @@ void GFX_RenderTick(void) {
                 if (!ci->is_flipped)
                     DrawTexturePro(
                         ci->atlas->texture, 
-                        _CardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
+                        _cardAtlasSrcFace(ci->c.suit, ci->c.rank, ci->w, ci->h), 
                         (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
                         (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
                         ci->angle_deg, 
@@ -418,7 +418,7 @@ void GFX_RenderTick(void) {
                 else
                     DrawTexturePro(
                         ci->atlas->texture, 
-                        _CardAtlasSrcBack(theme_idx, ci->w, ci->h), 
+                        _cardAtlasSrcBack(theme_idx, ci->w, ci->h), 
                         (Rectangle) { ci->x, ci->y, ci->w, ci->h }, 
                         (Vector2) { ci->w * 0.5f, ci->h * 0.5f }, 
                         ci->angle_deg, 
@@ -426,7 +426,7 @@ void GFX_RenderTick(void) {
                     );
             }
                 break;
-                
+
             case GFX_DRAW_TAB: {
                 const TabInfo* ti = render_arr[i].tab;
                 if (ti->w <= 0 || ti->h <= 0)

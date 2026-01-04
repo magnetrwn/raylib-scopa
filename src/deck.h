@@ -4,7 +4,7 @@
 #include "card.h"
 #define DECK_SIZE CARDS_N
 
-typedef struct _Deck {
+typedef struct {
     int cards[DECK_SIZE];
     int index;
 } Deck;
